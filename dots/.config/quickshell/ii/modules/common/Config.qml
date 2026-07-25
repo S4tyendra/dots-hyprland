@@ -321,8 +321,13 @@ Singleton {
                 property bool vertical: false
                 property bool showSeconds: false
                 property JsonObject resources: JsonObject {
-                    property bool alwaysShowSwap: true
+                    property bool alwaysShowRam: true
+                    property bool alwaysShowSwap: false
                     property bool alwaysShowCpu: true
+                    property bool alwaysShowCpuTemp: false
+                    property bool alwaysShowDisk: false
+                    property string style: "filled"
+                    property bool showValue: true
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90

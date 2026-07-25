@@ -275,6 +275,8 @@ Item {
         }
     }
 
+    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3
+
     // ── Interaction ──────────────────────────────────────────
     MouseArea {
         id: mouseArea
@@ -292,12 +294,12 @@ Item {
             }
         }
 
-        // Subtle hover highlight (same pattern as rest of bar)
+        // Hover highlight matching bar pill aesthetics
         Rectangle {
             anchors.fill: parent
             radius: Appearance.rounding.full
             color: parent.containsMouse
-                ? Appearance.colors.colLayer1Hover
+                ? (root.isMaterial ? Appearance.colors.colPrimaryContainer : Appearance.colors.colLayer1Hover)
                 : "transparent"
             Behavior on color {
                 animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
@@ -308,24 +310,40 @@ Item {
         RowLayout {
             id: contentRow
             anchors.centerIn: parent
-            spacing: 10
+            spacing: root.isMaterial ? 8 : 10
 
             // ─ RX ─
             RowLayout {
-                spacing: 3
+                spacing: 4
+
+                Rectangle {
+                    visible: root.isMaterial
+                    width: 20
+                    height: 20
+                    radius: Appearance.rounding.full
+                    color: Appearance.colors.colPrimary
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "arrow_downward"
+                        iconSize: Appearance.font.pixelSize.smaller
+                        color: Appearance.colors.colOnPrimary
+                    }
+                }
 
                 MaterialSymbol {
+                    visible: !root.isMaterial
                     text: "arrow_downward"
                     iconSize: Appearance.font.pixelSize.small
                     color: Appearance.colors.colOnLayer0
                     opacity: 0.5
                 }
 
-                Text {
+                StyledText {
                     text: root.rxText()
                     font.pixelSize: Appearance.font.pixelSize.small
                     font.family: Appearance.font.family.mono
-                    color: Appearance.colors.colOnLayer0
+                    color: root.isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
                 }
             }
 
@@ -333,29 +351,55 @@ Item {
             Rectangle {
                 width: 1
                 height: Appearance.font.pixelSize.small + 2
-                color: Appearance.colors.colOutlineVariant
-                opacity: 0.4
+                color: root.isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOutlineVariant
+                opacity: root.isMaterial ? 0.3 : 0.4
             }
 
             // ─ TX ─
             RowLayout {
-                spacing: 3
+                spacing: 4
+
+                Rectangle {
+                    visible: root.isMaterial
+                    width: 20
+                    height: 20
+                    radius: Appearance.rounding.full
+                    color: Appearance.colors.colPrimary
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "arrow_upward"
+                        iconSize: Appearance.font.pixelSize.smaller
+                        color: Appearance.colors.colOnPrimary
+                    }
+                }
 
                 MaterialSymbol {
+                    visible: !root.isMaterial
                     text: "arrow_upward"
                     iconSize: Appearance.font.pixelSize.small
                     color: Appearance.colors.colOnLayer0
                     opacity: 0.5
                 }
 
-                Text {
+                StyledText {
                     text: root.txText()
                     font.pixelSize: Appearance.font.pixelSize.small
                     font.family: Appearance.font.family.mono
-                    color: Appearance.colors.colOnLayer0
+                    color: root.isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
                 }
             }
         }
+    }
+
+    property real peakRxBps: 1024 * 1024
+    property real peakTxBps: 512 * 1024
+
+    onRxBpsChanged: {
+        if (rxBps > peakRxBps) peakRxBps = rxBps
+    }
+    onTxBpsChanged: {
+        if (txBps > peakTxBps) peakTxBps = txBps
     }
 
     // ── Popup ───────────────────────────────────────────────
@@ -365,5 +409,10 @@ Item {
         uploadToday: root.uploadToday
         totalToday: root.totalToday
         avgSpeedToday: root.avgSpeedToday
+        rxBps: root.rxBps
+        txBps: root.txBps
+        activeIface: root.activeIface
+        rxSpeedText: root.fmtSpeed(root.rxBps)
+        txSpeedText: root.fmtSpeed(root.txBps)
     }
 }

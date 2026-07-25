@@ -11,68 +11,43 @@ StyledPopup {
     property string uploadToday: "-"
     property string totalToday: "-"
     property string avgSpeedToday: "-"
+    property string activeIface: ""
+    property real rxBps: 0
+    property real txBps: 0
+    property string rxSpeedText: "0 B/s"
+    property string txSpeedText: "0 B/s"
 
     Row {
-        anchors.centerIn: parent
-        spacing: 12
+        spacing: 5
 
-        Column {
-            anchors.top: parent.top
-            spacing: 8
-
-            StyledPopupHeaderRow {
-                icon: "arrow_downward"
-                label: Translation.tr("Download")
-            }
-            Column {
-                spacing: 4
-                StyledPopupValueRow {
-                    icon: "calendar_today"
-                    label: Translation.tr("Today:")
-                    value: root.downloadToday
-                }
-            }
+        ResourceCard {
+            label: Translation.tr("Download (Today)")
+            iconText: "arrow_downward"
+            iconShape: MaterialShape.Shape.Clover4Leaf
+            value: 0
+            percentText: root.rxSpeedText
+            showProgress: false
+            sublabel: root.downloadToday
         }
 
-        Column {
-            anchors.top: parent.top
-            spacing: 8
-
-            StyledPopupHeaderRow {
-                icon: "arrow_upward"
-                label: Translation.tr("Upload")
-            }
-            Column {
-                spacing: 4
-                StyledPopupValueRow {
-                    icon: "calendar_today"
-                    label: Translation.tr("Today:")
-                    value: root.uploadToday
-                }
-            }
+        ResourceCard {
+            label: Translation.tr("Upload (Today)")
+            iconText: "arrow_upward"
+            iconShape: MaterialShape.Shape.Gem
+            value: 0
+            percentText: root.txSpeedText
+            showProgress: false
+            sublabel: root.uploadToday
         }
 
-        Column {
-            anchors.top: parent.top
-            spacing: 8
-
-            StyledPopupHeaderRow {
-                icon: "speed"
-                label: Translation.tr("Traffic")
-            }
-            Column {
-                spacing: 4
-                StyledPopupValueRow {
-                    icon: "check_circle"
-                    label: Translation.tr("Total Today:")
-                    value: root.totalToday
-                }
-                StyledPopupValueRow {
-                    icon: "bolt"
-                    label: Translation.tr("Avg Speed:")
-                    value: root.avgSpeedToday
-                }
-            }
+        ResourceCard {
+            label: Translation.tr("Total Traffic")
+            iconText: "speed"
+            iconShape: MaterialShape.Shape.Circle
+            value: 0
+            percentText: root.totalToday
+            showProgress: false
+            sublabel: root.avgSpeedToday !== "-" ? `${root.avgSpeedToday}` : root.activeIface
         }
     }
 }
