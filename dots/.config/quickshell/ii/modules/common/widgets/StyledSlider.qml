@@ -158,8 +158,13 @@ Slider {
                     }
                     FrameAnimation {
                         running: root.animateWave
+                        property real lastPaintTime: 0
                         onTriggered: {
-                            wavyFill.requestPaint()
+                            // Throttle Canvas repaints to waveFps instead of display refresh rate
+                            if (elapsedTime - lastPaintTime >= 1 / root.waveFps) {
+                                lastPaintTime = elapsedTime
+                                wavyFill.requestPaint()
+                            }
                         }
                     }
                 }

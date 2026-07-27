@@ -88,7 +88,9 @@ Item {
     }
 
     Timer {
-        interval: 33
+        // 1s is enough for the position readout/slider (value is smoothed);
+        // 33ms here kept the lockscreen busy at ~30fps for no visible gain.
+        interval: 1000
         repeat: true
         running: root.player?.isPlaying ?? false
         onTriggered: {
@@ -481,6 +483,8 @@ Item {
                         active: root.player?.canSeek ?? false
                         sourceComponent: StyledSlider {
                             configuration: StyledSlider.Configuration.Wavy
+                            // Stop per-frame wave repaints when paused
+                            animateWave: root.player?.isPlaying ?? false
                             highlightColor: root.blendedColors.colPrimary
                             trackColor: ColorUtils.applyAlpha(root.blendedColors.colSecondaryContainer, 0.5)
                             handleColor: root.blendedColors.colPrimary

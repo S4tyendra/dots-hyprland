@@ -10,7 +10,6 @@ import qs.modules.common.functions
 import qs.modules.common.panels.lock
 import qs.modules.ii.bar as Bar
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.SystemTray
 import qs.modules.ii.mediaControls
 
@@ -43,24 +42,10 @@ MouseArea {
         }
     }
 
-    // Visualizer data for lockscreen media controls
-    property list<real> visualizerPoints: []
-
-    Process {
-        id: cavaProc
-        running: root.mediaLoaderActive && root.mediaPlayerAvailable
-        onRunningChanged: {
-            if (!cavaProc.running)
-                root.visualizerPoints = [];
-        }
-        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
-        stdout: SplitParser {
-            onRead: data => {
-                let points = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
-                root.visualizerPoints = points;
-            }
-        }
-    }
+    // Visualizer data for lockscreen media controls.
+    // Uses the shared CavaService singleton instead of spawning a cava process
+    // per lock surface (one per monitor) — that caused high CPU while locked.
+    readonly property list<real> visualizerPoints: (root.mediaLoaderActive && root.mediaPlayerAvailable) ? CavaService.points : []
 
     // Force focus on entry
     function forceFieldFocus() {

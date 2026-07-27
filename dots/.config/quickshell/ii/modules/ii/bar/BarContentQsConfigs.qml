@@ -93,7 +93,7 @@ Item { // Bar content region
         BarGroup {
             id: middleCenterGroup
             anchors.verticalCenter: parent.verticalCenter
-            padding: workspacesWidget.widgetPadding
+            padding: workspacesWidget?.widgetPadding ?? 0
 
             Workspaces {
                 id: workspacesWidget
@@ -160,7 +160,7 @@ Item { // Bar content region
                 implicitHeight: Appearance.sizes.baseBarHeight - 8
 
                 buttonRadius: Appearance.rounding.small
-                colBackground: Appearance.colors.colLayer1
+                colBackground: Config.options?.bar.borderless ? "transparent" : Appearance.colors.colLayer1
                 colBackgroundHover: Appearance.colors.colLayer1Hover
                 colRipple: Appearance.colors.colLayer1Active
                 colBackgroundToggled: Appearance.colors.colSecondaryContainer
@@ -196,12 +196,13 @@ Item { // Bar content region
 
                     Revealer {
                         reveal: Audio.sink?.audio?.muted ?? false
-                        Layout.fillHeight: true
+                        Layout.alignment: Qt.AlignVCenter
                         Layout.rightMargin: reveal ? indicatorsRowLayout.realSpacing : 0
                         Behavior on Layout.rightMargin {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                         MaterialSymbol {
+                            Layout.alignment: Qt.AlignVCenter
                             text: "volume_off"
                             iconSize: Appearance.font.pixelSize.larger
                             color: rightSidebarButton.colText
@@ -209,13 +210,28 @@ Item { // Bar content region
                     }
                     Revealer {
                         reveal: Audio.source?.audio?.muted ?? false
-                        Layout.fillHeight: true
+                        Layout.alignment: Qt.AlignVCenter
                         Layout.rightMargin: reveal ? indicatorsRowLayout.realSpacing : 0
                         Behavior on Layout.rightMargin {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                         MaterialSymbol {
+                            Layout.alignment: Qt.AlignVCenter
                             text: "mic_off"
+                            iconSize: Appearance.font.pixelSize.larger
+                            color: rightSidebarButton.colText
+                        }
+                    }
+                    Revealer {
+                        reveal: Idle.inhibit
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.rightMargin: reveal ? indicatorsRowLayout.realSpacing : 0
+                        Behavior on Layout.rightMargin {
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                        }
+                        MaterialSymbol {
+                            Layout.alignment: Qt.AlignVCenter
+                            text: "coffee"
                             iconSize: Appearance.font.pixelSize.larger
                             color: rightSidebarButton.colText
                         }

@@ -521,6 +521,66 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "empty_dashboard"
+        title: Translation.tr("Resources")
+
+        ConfigSwitch {
+            buttonIcon: "planner_review"
+            text: Translation.tr("Always show CPU")
+            checked: Config.options.bar.resources.alwaysShowCpu
+            onCheckedChanged: { Config.options.bar.resources.alwaysShowCpu = checked }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "thermostat"
+            text: Translation.tr("Always show CPU Temperature")
+            checked: Config.options.bar.resources.alwaysShowCpuTemp
+            onCheckedChanged: { Config.options.bar.resources.alwaysShowCpuTemp = checked }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "memory"
+            text: Translation.tr("Always show RAM")
+            checked: Config.options.bar.resources.alwaysShowRam
+            onCheckedChanged: { Config.options.bar.resources.alwaysShowRam = checked }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "storage"
+            text: Translation.tr("Always show Disk")
+            checked: Config.options.bar.resources.alwaysShowDisk
+            onCheckedChanged: { Config.options.bar.resources.alwaysShowDisk = checked }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "swap_horiz"
+            text: Translation.tr("Always show Swap")
+            checked: Config.options.bar.resources.alwaysShowSwap
+            onCheckedChanged: { Config.options.bar.resources.alwaysShowSwap = checked }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "decimal_increase"
+            text: Translation.tr("Show Percentage numbers on bar")
+            checked: Config.options.bar.resources.showValue
+            onCheckedChanged: { Config.options.bar.resources.showValue = checked; }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Style")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.bar.resources.style
+                onSelected: newValue => { Config.options.bar.resources.style = newValue; }
+                options: [
+                    { displayName: Translation.tr("Filled"), icon: "incomplete_circle", value: "filled" },
+                    { displayName: Translation.tr("Outline"), icon: "circles", value: "outline" }
+                ]
+            }
+        }
+    }
+
+    ContentSection {
         icon: "tooltip"
         title: Translation.tr("Tooltips")
 
