@@ -19,6 +19,7 @@ Singleton {
     property double lat: 0
     property double lon: 0
     property bool locationReady: false
+    property string gpsCityName: ""
 
     onUseUSCSChanged: root.getData()
     onCityChanged: {
@@ -72,7 +73,7 @@ Singleton {
         temp.sunset = formatTime(data?.sunsetTimeLocal) ?? "--:--";
         temp.windDir = data?.windDirectionCardinal ?? "N";
         temp.wCode = mapIconCode(data?.iconCode ?? 2000);
-        temp.city = root.city || "City";
+        temp.city = root.city || root.gpsCityName || "City";
         temp.description = data?.wxPhraseLong ?? "";
         temp.cr = (data?.precip24Hour ?? 0) + "%";
         temp.temp = "";
@@ -158,6 +159,13 @@ Singleton {
         fetcher.running = true;
     }
 
+    function fetchGpsCityName() {
+        if (!root.apiKey) return;
+        const url = `https://api.weather.com/v3/location/search?query=${root.lat},${root.lon}&language=en-US&format=json&apiKey=${root.apiKey}`;
+        gpsCitySearcher.command = ["bash", "-c", `curl -s "${url}"`];
+        gpsCitySearcher.running = true;
+    }
+
     Component.onCompleted: {
         if (root.gpsActive) {
             console.info("[WeatherService] Starting GPS service.");
@@ -205,6 +213,25 @@ Singleton {
         }
     }
 
+    Process {
+        id: gpsCitySearcher
+        command: ["bash", "-c", ""]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (text.length === 0) return;
+                try {
+                    const parsed = JSON.parse(text);
+                    const loc = parsed?.location;
+                    if (loc?.place?.[0]) {
+                        root.gpsCityName = loc.place[0];
+                    }
+                } catch (e) {
+                    console.error(`[WeatherService:GpsCitySearch] ${e.message}`);
+                }
+            }
+        }
+    }
+
     PositionSource {
         id: positionSource
         updateInterval: root.fetchInterval
@@ -214,6 +241,7 @@ Singleton {
                 root.lat = position.coordinate.latitude;
                 root.lon = position.coordinate.longitude;
                 root.locationReady = true;
+                root.fetchGpsCityName();
                 root.getData();
             } else {
                 console.error("[WeatherService] Failed to get GPS location.");
