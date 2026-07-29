@@ -357,6 +357,7 @@ Singleton {
                     property string city: "" // When 'enableGPS' is false
                     property bool useUSCS: false // Instead of metric (SI) units
                     property int fetchInterval: 10 // minutes
+                    property string apiKey: "793db2b6128c4bc2bdb2b6128c0bc230"
                 }
                 property JsonObject indicators: JsonObject {
                     property JsonObject notifications: JsonObject {
