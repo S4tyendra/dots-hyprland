@@ -55,9 +55,16 @@ StyledPopup {
                     text: {
                         if (Battery.chargeState == 4)
                             return Translation.tr("Fully charged")
-                        if (Battery.isCharging)
-                            return Translation.tr("Charging") + (root.showTime ? " · " + formatTime(Battery.timeToFull) : "")
-                        return Translation.tr("Time to empty") + (root.showTime ? " · " + formatTime(Battery.timeToEmpty) : "")
+                        if (Battery.isCharging) {
+                            if (Battery.timeToFull > 0)
+                                return Translation.tr("Charging") + " · " + formatTime(Battery.timeToFull)
+                            return Translation.tr("Charging")
+                        }
+                        if (Battery.percentage <= 0)
+                            return Translation.tr("Depleted")
+                        if (Battery.timeToEmpty > 0)
+                            return Translation.tr("Time to empty") + " · " + formatTime(Battery.timeToEmpty)
+                        return Translation.tr("Time to empty")
                     }
                 }
             }
@@ -82,12 +89,9 @@ StyledPopup {
                 iconText: "heart_check"
                 iconShape: MaterialShape.Shape.Clover4Leaf
                 value: Battery.health > 0 ? Battery.health / 100 : 0
-                sublabel: Battery.chargeCycles > 0
-                    ? `${Battery.chargeCycles} ${Translation.tr("cycles")}`
-                    : Battery.health > 0
-                        ? `${Math.round(Battery.health)}%`
-                        : Translation.tr("N/A")
-                sublabelColor: Appearance.colors.colOnSurfaceVariant
+                percentText: Battery.health > 0 ? `${Math.round(Battery.health)}%` : Translation.tr("N/A")
+                sublabel: ""
+                showProgress: true
                 cardWidth: 150
             }
 
@@ -98,12 +102,9 @@ StyledPopup {
                 iconText: "bolt"
                 iconShape: MaterialShape.Shape.Pentagon
                 value: Battery.energyRate > 0 ? Math.min(Battery.energyRate / 60, 1.0) : 0
-                sublabel: Battery.chargeState == 4
-                    ? Translation.tr("Full")
-                    : Battery.energyRate > 0
-                        ? `${Battery.energyRate.toFixed(2)}W`
-                        : Translation.tr("N/A")
-                sublabelColor: Appearance.colors.colOnSurfaceVariant
+                percentText: `${Battery.energyRate.toFixed(2)}W`
+                sublabel: ""
+                showProgress: true
                 cardWidth: 150
             }
         }
