@@ -30,6 +30,16 @@ Singleton {
     property real energyRate: UPower.displayDevice.changeRate
     property real timeToEmpty: UPower.displayDevice.timeToEmpty
     property real timeToFull: UPower.displayDevice.timeToFull
+    property int chargeCycles: (function() {
+        const devList = UPower.devices.values;
+        for (let i = 0; i < devList.length; ++i) {
+            const dev = devList[i];
+            if (dev.isLaptopBattery) {
+                return dev.chargeCycles ?? 0;
+            }
+        }
+        return 0;
+    })()
 
     property real health: (function() {
         const devList = UPower.devices.values;
@@ -43,6 +53,17 @@ Singleton {
                     return health * 100;
                 } else {
                     return health;
+                }
+            }
+        }
+        // Fallback: calculate from energy capacity
+        for (let i = 0; i < devList.length; ++i) {
+            const dev = devList[i];
+            if (dev.isLaptopBattery) {
+                const energyFull = dev.energyFull ?? 0;
+                const energyFullDesign = dev.energyFullDesign ?? 0;
+                if (energyFullDesign > 0 && energyFull > 0) {
+                    return (energyFull / energyFullDesign) * 100;
                 }
             }
         }
