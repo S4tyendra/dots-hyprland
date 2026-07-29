@@ -81,10 +81,12 @@ StyledPopup {
                 label: Translation.tr("Health")
                 iconText: "heart_check"
                 iconShape: MaterialShape.Shape.Clover4Leaf
-                value: Battery.health / 100
+                value: Battery.health > 0 ? Battery.health / 100 : 0
                 sublabel: Battery.chargeCycles > 0
                     ? `${Battery.chargeCycles} ${Translation.tr("cycles")}`
-                    : Translation.tr("N/A")
+                    : Battery.health > 0
+                        ? `${Math.round(Battery.health)}%`
+                        : Translation.tr("N/A")
                 sublabelColor: Appearance.colors.colOnSurfaceVariant
                 cardWidth: 150
             }
@@ -95,10 +97,12 @@ StyledPopup {
                     : Translation.tr("Draw")
                 iconText: "bolt"
                 iconShape: MaterialShape.Shape.Pentagon
-                value: Math.min(Battery.energyRate / 60, 1.0)
+                value: Battery.energyRate > 0 ? Math.min(Battery.energyRate / 60, 1.0) : 0
                 sublabel: Battery.chargeState == 4
                     ? Translation.tr("Full")
-                    : `${Battery.energyRate.toFixed(2)}W`
+                    : Battery.energyRate > 0
+                        ? `${Battery.energyRate.toFixed(2)}W`
+                        : Translation.tr("N/A")
                 sublabelColor: Appearance.colors.colOnSurfaceVariant
                 cardWidth: 150
             }
