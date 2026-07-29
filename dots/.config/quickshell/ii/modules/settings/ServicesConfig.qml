@@ -254,14 +254,8 @@ ContentPage {
             }
         }
         
-        MaterialTextArea {
+        CitySearchField {
             Layout.fillWidth: true
-            placeholderText: Translation.tr("City name")
-            text: Config.options.bar.weather.city
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Config.options.bar.weather.city = text;
-            }
         }
         ConfigSpinBox {
             icon: "av_timer"
@@ -272,6 +266,17 @@ ContentPage {
             stepSize: 5
             onValueChanged: {
                 Config.options.bar.weather.fetchInterval = value;
+            }
+        }
+        MaterialTextArea {
+            Layout.fillWidth: true
+            placeholderText: Translation.tr("API Key (weather.com)")
+            text: Config.options.bar.weather.apiKey
+            wrapMode: TextEdit.Wrap
+            onTextChanged: {
+                Qt.callLater(() => {
+                    Config.options.bar.weather.apiKey = text;
+                });
             }
         }
     }
