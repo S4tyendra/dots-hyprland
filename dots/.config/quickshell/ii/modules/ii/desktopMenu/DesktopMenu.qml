@@ -221,6 +221,22 @@ Scope {
                                 }
                             }
                         }
+
+                        RippleButton {
+                            implicitHeight: 40
+                            colBackground: "transparent"
+                            colBackgroundHover: Appearance.colors.colLayer2
+                            contentItem: RowLayout {
+                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                                spacing: 12
+                                MaterialSymbol { text: "settings"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
+                                StyledText { Layout.fillWidth: true; text: "Settings"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
+                            }
+                            onClicked: {
+                                GlobalStates.desktopMenuOpen = false
+                                GlobalStates.settingsOpen = true
+                            }
+                        }
                     }
                 }
             }
