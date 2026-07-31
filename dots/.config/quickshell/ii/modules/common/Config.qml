@@ -484,7 +484,7 @@ Singleton {
                 property bool launchOnStartup: false
                 property JsonObject blur: JsonObject {
                     property bool enable: true
-                    property real radius: 100
+                    property real radius: 40  // Legacy: was 100 (drove 201 GaussianBlur samples). Now decorative; MultiEffect uses blurMax/blur instead.
                     property real extraZoom: 1.1
                 }
                 property bool centerClock: true

@@ -130,7 +130,7 @@ Item {
         layer.enabled: true
         layer.effect: MultiEffect {
             blurEnabled: true
-            blurMax: 48
+            blurMax: 24  // was 48; halved — imperceptible difference at lockscreen distance
             blur: 1.0
         }
     }
@@ -301,7 +301,7 @@ Item {
                     layer.enabled: true
                     layer.effect: MultiEffect {
                         blurEnabled: true
-                        blurMax: 24
+                        blurMax: 12  // was 24
                         blur: 1.0
                     }
                 }

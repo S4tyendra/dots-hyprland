@@ -7,6 +7,6 @@ MultiEffect {
     anchors.fill: source
     saturation: 0.2
     blurEnabled: true
-    blurMax: 100
+    blurMax: 32  // was 100; blurMax allocates GPU kernel — 32 is visually sufficient
     blur: 1
 }
