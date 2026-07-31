@@ -107,7 +107,7 @@ Singleton {
     }
 
     Timer {
-        interval: 1
+        interval: 3000  // was 1 (1ms!); reset to real value after first tick anyway, but avoids 1000 fires/sec burst at startup
         running: true
         repeat: true
         onTriggered: {

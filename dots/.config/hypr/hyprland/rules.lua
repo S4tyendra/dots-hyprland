@@ -136,6 +136,14 @@ hl.layer_rule({ match = { namespace = "osk[0-9]*" }, ignore_alpha = 0.6})
 hl.layer_rule({ match = { namespace = "quickshell:.*" }, blur_popups = true})
 hl.layer_rule({ match = { namespace = "quickshell:.*" }, blur = true})
 hl.layer_rule({ match = { namespace = "quickshell:.*" }, ignore_alpha = 0.79})
+-- PERF: background is the bottom-most full-screen layer on every monitor.
+-- Blurring it is pointless (nothing below it) but costs 2 full-screen blur passes
+-- per monitor per frame. Explicitly cancel the wildcard blur above.
+hl.layer_rule({ match = { namespace = "quickshell:background" }, blur = false})
+hl.layer_rule({ match = { namespace = "quickshell:background" }, xray = false})
+-- PERF: screenCorners are 23x23px decorative surfaces. Blur overhead not worth it.
+hl.layer_rule({ match = { namespace = "quickshell:screenCorners" }, blur = false})
+hl.layer_rule({ match = { namespace = "quickshell:screenCorners" }, xray = false})
 hl.layer_rule({ match = { namespace = "quickshell:bar" }, animation = "slide"})
 hl.layer_rule({ match = { namespace = "quickshell:actionCenter" }, no_anim = true})
 hl.layer_rule({ match = { namespace = "quickshell:cheatsheet" }, animation = "slide bottom"})

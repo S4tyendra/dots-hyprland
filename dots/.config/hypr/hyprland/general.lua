@@ -79,12 +79,12 @@ hl.config({
 			xray = true,
 			special = false,
 			new_optimizations = true,
-			size = 8,
-			passes = 2,    -- was 3; each pass = full-screen shader dispatch
+			size = 6,
+			passes = 1,    -- 1 pass: ~55% cheaper than 2, still visually fine
 			brightness = 1,
 			noise = 0.05,
 			contrast = 0.89,
-			vibrancy = 0,  -- was 0.5; adds extra post-process pass, not worth it
+			vibrancy = 0,
 			vibrancy_darkness = 0,
 			popups = false,
 			popups_ignorealpha = 0.6,
@@ -93,13 +93,13 @@ hl.config({
 		},
 		shadow = {
 			enabled = true,
-			range = 20,
+			range = 16,
 			offset = { 0, 2 },
-			render_power = 10,
+			render_power = 3,  -- was 10; higher = more shadow samples, 3 is default sweet spot
 			color = "rgba(00000020)",
 		},
 		-- Dim
-		dim_inactive = true,
+		dim_inactive = false, -- was true; 0.05 strength is imperceptible but forces a shader pass per focus change
 		dim_strength = 0.05,
 		dim_special = 0.2,
 	},
