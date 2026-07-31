@@ -79,13 +79,13 @@ hl.config({
 			xray = true,
 			special = false,
 			new_optimizations = true,
-			size = 10,
-			passes = 3,
+			size = 8,
+			passes = 2,    -- was 3; each pass = full-screen shader dispatch
 			brightness = 1,
 			noise = 0.05,
 			contrast = 0.89,
-			vibrancy = 0.5,
-			vibrancy_darkness = 0.5,
+			vibrancy = 0,  -- was 0.5; adds extra post-process pass, not worth it
+			vibrancy_darkness = 0,
 			popups = false,
 			popups_ignorealpha = 0.6,
 			input_methods = true,
@@ -296,7 +296,7 @@ hl.config({
 		zoom_rigid = false,
 		zoom_disable_aa = true,
 		hotspot_padding = 1,
-		no_hardware_cursors = true,
+		no_hardware_cursors = false, -- was true; software cursors force GPU render on every frame
 	},
 
 	xwayland = {

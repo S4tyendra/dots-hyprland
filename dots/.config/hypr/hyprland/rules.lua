@@ -84,6 +84,10 @@ hl.window_rule({match = {float = 0 }, no_shadow = true})
 hl.workspace_rule({ workspace = "special:special", gaps_out = 30 })
 
 -- ######## Layer rules ########
+-- PERF: xray=true on .* means Hyprland re-blurs the desktop behind every layer
+-- that has blur=true (bar, sidebars, overview, etc.). With 12+ blurred namespaces
+-- and passes=2, this is the dominant Hyprland GPU cost. Per-namespace scoping
+-- would allow disabling xray on surfaces that don't visually need it.
 hl.layer_rule({ match = { namespace = ".*" }, xray = true})
 hl.layer_rule({ match = { namespace = "walker" }, no_anim = true})
 hl.layer_rule({ match = { namespace = "selection" }, no_anim = true})
