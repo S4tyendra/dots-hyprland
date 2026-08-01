@@ -54,9 +54,52 @@ post_process() {
     local screen_width="$1"
     local screen_height="$2"
     local wallpaper_path="$3"
+    local target_monitor="${4:-}"
 
     handle_kde_material_you_colors &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
+
+    local target_img="$wallpaper_path"
+    if is_video "$target_img"; then
+        target_img="$THUMBNAIL_DIR/$(basename "$target_img").jpg"
+    fi
+    if [ ! -f "$target_img" ]; then
+        return
+    fi
+
+    mkdir -p "$STATE_DIR/user/generated/wallpaper"
+
+    # Generate per-monitor blurred images at each monitor's native resolution
+    generate_blurred_for_monitor() {
+        local mon_name="$1"
+        local mon_w="$2"
+        local mon_h="$3"
+        local src="$4"
+        local out="$STATE_DIR/user/generated/wallpaper/blurred_${mon_name}.png"
+        magick "$src" -resize "${mon_w}x${mon_h}^" -gravity Center -extent "${mon_w}x${mon_h}" -blur 0x20 "$out"
+    }
+
+    # Read all connected monitors and generate a blurred file for each
+    while IFS= read -r mon_json; do
+        mon_name=$(echo "$mon_json" | jq -r '.name')
+        mon_w=$(echo "$mon_json" | jq -r '.width')
+        mon_h=$(echo "$mon_json" | jq -r '.height')
+        generate_blurred_for_monitor "$mon_name" "$mon_w" "$mon_h" "$target_img" &
+    done < <(hyprctl monitors -j | jq -c '.[]')
+
+    # Also generate the global fallback blurred.png using the switched monitor's resolution
+    # (or focused monitor if no specific monitor was targeted)
+    if [ -n "$target_monitor" ]; then
+        mon_info=$(hyprctl monitors -j | jq -c --arg name "$target_monitor" '.[] | select(.name == $name)')
+    else
+        mon_info=$(hyprctl monitors -j | jq -c '.[] | select(.focused == true)')
+    fi
+    fb_w=$(echo "$mon_info" | jq -r '.width // 1920')
+    fb_h=$(echo "$mon_info" | jq -r '.height // 1080')
+    magick "$target_img" -resize "${fb_w}x${fb_h}^" -gravity Center -extent "${fb_w}x${fb_h}" -blur 0x20 \
+        "$STATE_DIR/user/generated/wallpaper/blurred.png" &
+
+    wait
 }
 
 check_and_prompt_upscale() {
@@ -326,10 +369,10 @@ switch() {
     deactivate
     "$SCRIPT_DIR"/applycolor.sh
 
-    # Pass screen width, height, and wallpaper path to post_process
+    # Pass screen width, height, wallpaper path, and target monitor to post_process
     max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
     max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
-    post_process "$max_width_desired" "$max_height_desired" "$imgpath"
+    post_process "$max_width_desired" "$max_height_desired" "$imgpath" "$target_monitor"
 }
 
 main() {

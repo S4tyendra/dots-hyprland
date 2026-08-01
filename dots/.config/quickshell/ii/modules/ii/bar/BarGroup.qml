@@ -1,4 +1,5 @@
 import qs.modules.common
+import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
 
@@ -19,8 +20,15 @@ Item {
             leftMargin: root.vertical ? 4 : 0
             rightMargin: root.vertical ? 4 : 0
         }
-        color: Config.options?.bar.borderless ? "transparent" : Appearance.colors.colLayer1
+        color: "transparent"
         radius: Appearance.rounding.small
+
+        PreBlurredBackground {
+            visible: !Config.options?.bar.borderless
+            panelX: background.mapToItem(null, 0, 0).x
+            panelY: background.mapToItem(null, 0, 0).y
+            cornerRadius: background.radius
+        }
     }
 
     GridLayout {

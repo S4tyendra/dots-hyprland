@@ -250,9 +250,9 @@ Scope {
                 // Wallpaper
                 StyledImage {
                     id: wallpaper
-                    // Only allocate GPU layer when the ShaderEffect or blur needs it as a texture.
-                    layer.enabled: transitionAnim.running || blurLoader.active
-                    visible: (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0) && opacity > 0 && !blurLoader.active
+                    // Only allocate GPU layer when transition is running
+                    layer.enabled: transitionAnim.running
+                    visible: (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0) && opacity > 0
                     opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo) ? 1 : 0
                     cache: false
                     smooth: false
@@ -325,7 +325,7 @@ Scope {
                 ShaderEffect {
                     id: transitionEffect
                     anchors.fill: parent
-                    visible: !blurLoader.active && bgRoot.wallpaperAnimation !== "" && bgRoot.transitionProgress < 1.0
+                    visible: !GlobalStates.screenLocked && bgRoot.wallpaperAnimation !== "" && bgRoot.transitionProgress < 1.0
                     property var fromImage: previousWallpaper
                     property var toImage: wallpaper
                     property real progress: bgRoot.transitionProgress
@@ -336,47 +336,41 @@ Scope {
                     fragmentShader: bgRoot.wallpaperAnimation !== "" ? Qt.resolvedUrl(`shaders/${bgRoot.currentShader}.frag.qsb`) : ""
                 }
 
-                Loader {
-                    id: blurLoader
-                    active: Config.options.lock.blur.enable && (GlobalStates.screenLocked || scaleAnim.running)
+                // Zero-GPU cost pre-blurred wallpaper overlay for lock screen
+                Item {
+                    id: blurredOverlay
                     anchors.fill: wallpaper
+                    visible: Config.options.lock.blur.enable && opacity > 0
+                    opacity: GlobalStates.screenLocked ? 1 : 0
                     scale: GlobalStates.screenLocked ? Config.options.lock.blur.extraZoom : 1
-                    Behavior on scale {
+
+                    Behavior on opacity {
                         NumberAnimation {
-                            id: scaleAnim
                             duration: 400
                             easing.type: Easing.BezierSpline
                             easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
                         }
                     }
-                    // MultiEffect is a single-pass GPU shader (Qt6); replaces
-                    // GaussianBlur from Qt5Compat which uses samples = 2*radius+1
-                    // (201 samples at radius=100) — a huge per-pixel GPU cost.
-                    sourceComponent: MultiEffect {
-                        source: wallpaper
-                        anchors.fill: wallpaper
-                        blurEnabled: true
-                        // blurMax allocates the kernel; cap at 64 — visually indistinguishable
-                        // from 100 but ~2.4× cheaper on the GPU.
-                        blurMax: 64
-                        blur: GlobalStates.screenLocked ? 1.0 : 0.0
-                        Behavior on blur {
-                            NumberAnimation {
-                                duration: 400
-                                easing.type: Easing.BezierSpline
-                            }
-                        }
 
-                        Rectangle {
-                            opacity: GlobalStates.screenLocked ? 1 : 0
-                            anchors.fill: parent
-                            color: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.7)
-                            Behavior on opacity {
-                                NumberAnimation {
-                                    duration: 400
-                                }
-                            }
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 400
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
                         }
+                    }
+
+                    StyledImage {
+                        anchors.fill: parent
+                        source: Directories.generatedBlurredWallpaperPath
+                        fillMode: Image.PreserveAspectCrop
+                        cache: false
+                        smooth: true
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.7)
                     }
                 }
 

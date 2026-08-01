@@ -133,8 +133,8 @@ hl.layer_rule({ match = { namespace = "osk[0-9]*" }, ignore_alpha = 0.6})
 
 -- Quickshell
 -- Quickshell: illogical-impulse
-hl.layer_rule({ match = { namespace = "quickshell:.*" }, blur_popups = true})
-hl.layer_rule({ match = { namespace = "quickshell:.*" }, blur = true})
+-- Quickshell blur handled in QML via pre-blurred image overlay (zero GPU overhead)
+hl.layer_rule({ match = { namespace = "quickshell:.*" }, blur = false})
 hl.layer_rule({ match = { namespace = "quickshell:.*" }, ignore_alpha = 0.79})
 -- PERF: background is the bottom-most full-screen layer on every monitor.
 -- Blurring it is pointless (nothing below it) but costs 2 full-screen blur passes

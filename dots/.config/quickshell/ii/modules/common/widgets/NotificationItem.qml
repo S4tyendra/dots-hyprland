@@ -1,5 +1,6 @@
 import qs
 import qs.modules.common
+import qs.modules.common.widgets
 import qs.services
 import qs.modules.common.functions
 import QtQuick
@@ -130,6 +131,13 @@ Item { // Notification item area
                 ColorUtils.mix(Appearance.colors.colSecondaryContainer, Appearance.colors.colLayer2, 0.35) :
                 (Appearance.colors.colLayer3) :
             ColorUtils.transparentize(Appearance.colors.colLayer3)
+
+        PreBlurredBackground {
+            panelX: background.mapToItem(null, 0, 0).x
+            panelY: background.mapToItem(null, 0, 0).y
+            cornerRadius: background.radius
+            tintOpacity: 0.55
+        }
 
         implicitHeight: expanded ? (contentColumn.implicitHeight + padding * 2) : summaryRow.implicitHeight
         Behavior on implicitHeight {

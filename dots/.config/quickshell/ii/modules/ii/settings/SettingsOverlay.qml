@@ -105,11 +105,17 @@ Scope {
             id: settingsWindow
             width: Math.min(parent.width - 80, 980)
             height: Math.min(parent.height - 80, 665)
-            color: Appearance.colors.colLayer0
+            color: "transparent"
             border.width: 1
             border.color: Appearance.colors.colLayer0Border
             radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5
             z: 1
+
+            PreBlurredBackground {
+                panelX: settingsWindow.x
+                panelY: settingsWindow.y
+                cornerRadius: settingsWindow.radius
+            }
 
             MouseArea {
                 anchors.fill: parent
