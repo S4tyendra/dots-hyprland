@@ -4,6 +4,7 @@ import QtQuick.Window
 import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Io
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -22,6 +23,23 @@ ContentPage {
             onRead: data => {
                 randomWallProc.status = data.trim();
             }
+        }
+    }
+
+    Process {
+        id: chooseWallProc
+        command: ["bash", "-c", FileUtils.trimFileProtocol(Directories.wallpaperSwitchScriptPath)]
+        onExited: {
+            GlobalStates.settingsOpen = true
+        }
+    }
+
+    Timer {
+        id: chooseWallTimer
+        interval: 150
+        onTriggered: {
+            chooseWallProc.command = ["bash", "-c", FileUtils.trimFileProtocol(Directories.wallpaperSwitchScriptPath)]
+            chooseWallProc.running = true
         }
     }
 
@@ -133,7 +151,8 @@ ContentPage {
                         text: Translation.tr("Pick wallpaper image on your system")
                     }
                     onClicked: {
-                        Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
+                        GlobalStates.settingsOpen = false
+                        chooseWallTimer.restart()
                     }
                     mainContentComponent: Component {
                         RowLayout {
