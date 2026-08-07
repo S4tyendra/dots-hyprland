@@ -7,7 +7,7 @@ CUSTOM_PATH=$(jq -r "$JSON_PATH" "$CONFIG_FILE" 2>/dev/null)
 
 RECORDING_DIR=""
 
-if [[ -n "$CUSTOM_PATH" ]]; then
+if [[ -n "$CUSTOM_PATH" && "$CUSTOM_PATH" != "null" ]]; then
     RECORDING_DIR="$CUSTOM_PATH"
 else
     RECORDING_DIR="$HOME/Videos" # Use default path
@@ -22,6 +22,14 @@ getaudiooutput() {
 getactivemonitor() {
     hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .name'
 }
+
+# Prefer Intel/AMD GPU encode (VAAPI). Falls back to CPU libx264 if unavailable.
+# User-confirmed working path: wf-recorder -c h264_vaapi
+if ffmpeg -hide_banner -encoders 2>/dev/null | grep -q 'h264_vaapi'; then
+    ENCODE_ARGS=(-c h264_vaapi)
+else
+    ENCODE_ARGS=(--pixel-format yuv420p)
+fi
 
 mkdir -p "$RECORDING_DIR"
 cd "$RECORDING_DIR" || exit
@@ -46,16 +54,17 @@ for ((i=0;i<${#ARGS[@]};i++)); do
     fi
 done
 
-if pgrep wf-recorder > /dev/null; then
+if pgrep -x wf-recorder > /dev/null; then
     notify-send "Recording Stopped" "Stopped" -a 'Recorder' &
-    pkill wf-recorder &
+    pkill -x wf-recorder &
 else
+    outfile="./recording_$(getdate).mp4"
     if [[ $FULLSCREEN_FLAG -eq 1 ]]; then
-        notify-send "Starting recording" 'recording_'"$(getdate)"'.mp4' -a 'Recorder' & disown
+        notify-send "Starting recording (GPU)" "$outfile" -a 'Recorder' & disown
         if [[ $SOUND_FLAG -eq 1 ]]; then
-            wf-recorder -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' -t --audio="$(getaudiooutput)"
+            wf-recorder -o "$(getactivemonitor)" "${ENCODE_ARGS[@]}" -f "$outfile" -t --audio="$(getaudiooutput)"
         else
-            wf-recorder -o "$(getactivemonitor)" --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' -t
+            wf-recorder -o "$(getactivemonitor)" "${ENCODE_ARGS[@]}" -f "$outfile" -t
         fi
     else
         # If a manual region was provided via --region, use it; otherwise run slurp as before.
@@ -68,11 +77,11 @@ else
             fi
         fi
 
-        notify-send "Starting recording" 'recording_'"$(getdate)"'.mp4' -a 'Recorder' & disown
+        notify-send "Starting recording (GPU)" "$outfile" -a 'Recorder' & disown
         if [[ $SOUND_FLAG -eq 1 ]]; then
-            wf-recorder --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' -t --geometry "$region" --audio="$(getaudiooutput)"
+            wf-recorder "${ENCODE_ARGS[@]}" -f "$outfile" -t --geometry "$region" --audio="$(getaudiooutput)"
         else
-            wf-recorder --pixel-format yuv420p -f './recording_'"$(getdate)"'.mp4' -t --geometry "$region"
+            wf-recorder "${ENCODE_ARGS[@]}" -f "$outfile" -t --geometry "$region"
         fi
     fi
 fi
