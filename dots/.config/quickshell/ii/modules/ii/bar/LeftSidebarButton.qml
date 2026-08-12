@@ -29,6 +29,20 @@ RippleButton {
         GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen;
     }
 
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        onWheel: (wheel) => {
+            if (wheel.angleDelta.y > 0) {
+                Brightness.increaseBrightness();
+            } else if (wheel.angleDelta.y < 0) {
+                Brightness.decreaseBrightness();
+            }
+            GlobalStates.osdBrightnessOpen = true;
+        }
+    }
+
     Connections {
         target: Ai
         function onResponseFinished() {
