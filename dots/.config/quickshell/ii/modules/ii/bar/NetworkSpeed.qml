@@ -16,7 +16,7 @@ MouseArea {
     property real previousTransmittedBytes: -1
     property double previousSampleTime: 0
 
-    implicitWidth: vertical ? 36 : speedColumn.implicitWidth + 8
+    implicitWidth: vertical ? 36 : 76
     implicitHeight: vertical ? speedColumn.implicitHeight + 6 : 32
 
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
@@ -95,13 +95,6 @@ MouseArea {
         onTriggered: networkStats.reload()
     }
 
-    TextMetrics {
-        id: regularRateMetrics
-        text: "999.9 MB/s"
-        font.pixelSize: Appearance.font.pixelSize.smallest
-        font.weight: Font.Medium
-    }
-
     component SpeedLine: RowLayout {
         id: speedLine
 
@@ -112,7 +105,8 @@ MouseArea {
         readonly property string rateText: root.formatRate(rate, root.vertical)
 
         spacing: root.vertical ? 1 : 3
-        implicitWidth: root.vertical ? -1 : (icon.implicitWidth + spacing + Math.ceil(regularRateMetrics.width))
+        implicitWidth: root.vertical ? 36 : 68
+        Layout.preferredWidth: root.vertical ? 36 : 68
 
         MaterialSymbol {
             id: icon
@@ -130,8 +124,6 @@ MouseArea {
 
         StyledText {
             Layout.fillWidth: true
-            implicitWidth: root.vertical ? -1 : Math.ceil(regularRateMetrics.width)
-            Layout.preferredWidth: root.vertical ? -1 : Math.ceil(regularRateMetrics.width)
             horizontalAlignment: Text.AlignRight
             text: speedLine.rateText
             color: Appearance.colors.colOnLayer1
