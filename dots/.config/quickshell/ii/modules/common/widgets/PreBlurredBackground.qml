@@ -26,13 +26,14 @@ Item {
         fillMode: Image.PreserveAspectCrop
         cache: true
         smooth: true
+        visible: status === Image.Ready
     }
 
     // Color tint overlay
     Rectangle {
         anchors.fill: parent
         color: root.tintColor
-        opacity: root.tintOpacity
+        opacity: blurredImg.status === Image.Ready ? root.tintOpacity : 0.85
         radius: root.cornerRadius
     }
 }
