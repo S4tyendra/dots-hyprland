@@ -307,8 +307,13 @@ Singleton {
                 property list<var> wallpapersByMonitor: []
             }
 
+            property JsonObject hyprland: JsonObject {
+                property JsonObject general: JsonObject {
+                    property int gapsOut: 5
+                }
+            }
+
             property JsonObject bar: JsonObject {
-                property string style: "ii" // Options: "ii", "qs_configs"
                 property JsonObject autoHide: JsonObject {
                     property bool enable: false
                     property int hoverRegionWidth: 2
@@ -319,9 +324,9 @@ Singleton {
                     }
                 }
                 property bool bottom: false // Instead of top
-                property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Plain rectangle
+                property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Islands (Plain rectangle) | 3: M3
                 property bool floatStyleShadow: true // Show shadow behind bar when cornerStyle == 1 (Float)
-                property bool borderless: false // true for no grouping of items
+                property string borderless: "pills" // "pills" | "separated" | "transparent"
                 property string topLeftIcon: "spark" // Options: "distro" or any icon name in ~/.config/quickshell/ii/assets/icons
                 property bool showBackground: true
                 property bool verbose: true
@@ -339,20 +344,32 @@ Singleton {
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
                 }
+                property JsonObject divider: JsonObject {
+                    property string style: "rect" // rect - dot - space
+                    property int spacing: 20
+                }
+                property JsonObject layouts: JsonObject {
+                    property list<string> leftLayout: ["leftSidebarButton", "activeWindow", "workspaces"]
+                    property list<string> middleLayout: ["media"]
+                    property list<string> rightLayout: ["systemIcons", "resources", "clockWidget", "utilButtons", "batteryIndicator", "weatherBar", "sysTray"]
+                }
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
                 property JsonObject utilButtons: JsonObject {
                     property bool showScreenSnip: true
                     property bool showColorPicker: false
                     property bool showMicToggle: false
                     property bool showKeyboardToggle: true
+                    property bool showWallpaperToggle: false
                     property bool showDarkModeToggle: true
                     property bool showPerformanceProfileToggle: false
                     property bool showScreenRecord: false
+                    property bool isRecording: false
                 }
                 property JsonObject workspaces: JsonObject {
                     property bool monochromeIcons: true
                     property int shown: 10
                     property bool showAppIcons: true
+                    property string indicatorStyle: "dot" // "dot" or "icon"
                     property bool alwaysShowNumbers: false
                     property int showNumberDelay: 300 // milliseconds
                     property list<string> numberMap: ["1", "2"] // Characters to show instead of numbers on workspace indicator
@@ -375,20 +392,14 @@ Singleton {
                 property JsonObject media: JsonObject {
                     property bool showVisualizer: true  // Waveform visualizer behind media pill
                     property bool showLyrics: true      // Separate scrolling lyrics widget in left bar
+                    property string preferredPlayer: "" // e.g. "spotify"
+                    property bool alwaysVisible: false
+                    property bool onlyTitle: false
+                    property int maxWidth: 550
+                    property int minWidth: 100
                 }
                 property JsonObject tooltips: JsonObject {
                     property bool clickToShow: false
-                }
-                property JsonObject layout: JsonObject {
-                    property string left: "activewindow,lyrics"
-                    property string centerLeft: "resources,media"
-                    property string center: "workspaces"
-                    property string centerRight: "clock,utils,battery"
-                    property string right: "weather"
-                }
-                property JsonObject layoutQsConfigs: JsonObject {
-                    property string left: "media"
-                    property string right: "workspaces,resources,netspeed,clock,weather,utils"
                 }
             }
 
@@ -506,13 +517,14 @@ Singleton {
                 property string iface: ""
             }
 
-            property JsonObject notifications: JsonObject {
-                property int timeout: 7000
-                property JsonObject monitor: JsonObject {
-                    property bool enable: false
-                    property string name: "" // Name of the monitor to show notifications on, like "eDP-1". Find out with 'hyprctl monitors' command
-                }
-            }
+             property JsonObject notifications: JsonObject {
+                 property int timeout: 7000
+                 property string position: "top_right"
+                 property JsonObject monitor: JsonObject {
+                     property bool enable: false
+                     property string name: "" // Name of the monitor to show notifications on, like "eDP-1". Find out with 'hyprctl monitors' command
+                 }
+             }
 
             property JsonObject osd: JsonObject {
                 property int timeout: 1000

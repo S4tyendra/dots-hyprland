@@ -7,7 +7,7 @@ import qs.modules.ii.bar as Bar
 
 Item {
     id: root
-    property bool borderless: Config.options.bar.borderless
+    readonly property bool borderless: Config.options.bar.borderless === "transparent"
     implicitHeight: column.implicitHeight
     implicitWidth: Appearance.sizes.verticalBarWidth
 

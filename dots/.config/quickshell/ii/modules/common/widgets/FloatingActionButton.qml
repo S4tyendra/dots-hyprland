@@ -48,11 +48,8 @@ RippleButton {
                 implicitWidth: reveal ? (buttonText.implicitWidth + root.elementSpacing + contentRowLayout.horizontalMargins) : 0
                 StyledText {
                     id: buttonText
-                    anchors {
-                        left: parent.left
-                        leftMargin: root.elementSpacing
-                        verticalCenter: parent.verticalCenter
-                    }
+                    anchors.left: parent.left
+                    anchors.leftMargin: root.elementSpacing
                     text: root.buttonText
                     color: Appearance.colors.colOnPrimaryContainer
                     font.pixelSize: 14

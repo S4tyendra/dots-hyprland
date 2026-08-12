@@ -27,10 +27,6 @@ Item {
         "displayName": Translation.tr("Active Window"),
         "icon": "visibility"
     }, {
-        "value": "lyrics",
-        "displayName": Translation.tr("Lyrics"),
-        "icon": "lyrics"
-    }, {
         "value": "media",
         "displayName": Translation.tr("Media"),
         "icon": "music_note"
