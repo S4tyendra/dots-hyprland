@@ -137,7 +137,7 @@ Scope {
                     // Extra space for shadow
                     implicitHeight: contentColumnLayout.implicitHeight
                     implicitWidth: contentColumnLayout.implicitWidth
-                    clip: true
+                    clip: false
 
                     MouseArea {
                         anchors.fill: parent
