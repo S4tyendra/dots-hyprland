@@ -17,7 +17,9 @@ MouseArea {
     property double previousSampleTime: 0
 
     implicitWidth: vertical ? 36 : 76
+    Layout.preferredWidth: vertical ? 36 : 76
     implicitHeight: vertical ? speedColumn.implicitHeight + 6 : 32
+    Layout.preferredHeight: vertical ? speedColumn.implicitHeight + 6 : 32
 
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
 

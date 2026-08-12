@@ -721,28 +721,6 @@ ContentPage {
             }
         }
 
-        ContentSubsection {
-            title: Translation.tr("Search UI Style")
-
-            ConfigSelectionArray {
-                currentValue: Config.options.search.style ?? "default"
-                onSelected: newValue => {
-                    Config.options.search.style = newValue;
-                }
-                options: [
-                    {
-                        displayName: Translation.tr("Top Bar + Overview"),
-                        icon: "view_agenda",
-                        value: "default"
-                    },
-                    {
-                        displayName: Translation.tr("Full Blur Center"),
-                        icon: "blur_on",
-                        value: "full_blur_center"
-                    }
-                ]
-            }
-        }
         ConfigSwitch {
             buttonIcon: "center_focus_strong"
             text: Translation.tr("Center icons")

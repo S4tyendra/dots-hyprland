@@ -596,7 +596,6 @@ Singleton {
             }
 
             property JsonObject search: JsonObject {
-                property string style: "default" // Options: "default" (Top Bar), "full_blur_center" (Full Blur Center)
                 property int nonAppResultDelay: 30 // This prevents lagging when typing
                 property string engineBaseUrl: "https://www.google.com/search?q="
                 property list<string> excludedSites: ["quora.com", "facebook.com"]

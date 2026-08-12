@@ -22,20 +22,13 @@ Scope {
         property bool monitorIsFocused: (Hyprland.focusedMonitor?.id == monitor?.id)
         visible: GlobalStates.overviewOpen
 
-        readonly property bool isFullBlur: (Config.options.search?.style ?? "default") === "full_blur_center"
-
         WlrLayershell.namespace: "quickshell:overview"
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.keyboardFocus: GlobalStates.overviewOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         color: "transparent"
 
-        Item {
-            id: fullWindowItem
-            anchors.fill: parent
-        }
-
         mask: Region {
-            item: GlobalStates.overviewOpen ? (panelWindow.isFullBlur ? fullWindowItem : columnLayout) : null
+            item: GlobalStates.overviewOpen ? columnLayout : null
         }
 
         anchors {
@@ -49,16 +42,12 @@ Scope {
             target: GlobalStates
             function onOverviewOpenChanged() {
                 if (!GlobalStates.overviewOpen) {
-                    if (searchWidget) searchWidget.disableExpandAnimation();
+                    searchWidget.disableExpandAnimation();
                     overviewScope.dontAutoCancelSearch = false;
                     GlobalFocusGrab.dismiss();
                 } else {
                     if (!overviewScope.dontAutoCancelSearch) {
-                        if (panelWindow.isFullBlur) {
-                            fullBlurSearch.cancelSearch();
-                        } else if (searchWidget) {
-                            searchWidget.cancelSearch();
-                        }
+                        searchWidget.cancelSearch();
                     }
                     GlobalFocusGrab.addDismissable(panelWindow);
                 }
@@ -71,32 +60,17 @@ Scope {
                 GlobalStates.overviewOpen = false;
             }
         }
-        implicitWidth: panelWindow.isFullBlur ? fullWindowItem.implicitWidth : columnLayout.implicitWidth
-        implicitHeight: panelWindow.isFullBlur ? fullWindowItem.implicitHeight : columnLayout.implicitHeight
+        implicitWidth: columnLayout.implicitWidth
+        implicitHeight: columnLayout.implicitHeight
 
         function setSearchingText(text) {
-            if (panelWindow.isFullBlur) {
-                fullBlurSearch.setSearchingText(text);
-                fullBlurSearch.focusFirstItem();
-            } else if (searchWidget) {
-                searchWidget.setSearchingText(text);
-                searchWidget.focusFirstItem();
-            }
-        }
-
-        FullBlurCenterSearch {
-            id: fullBlurSearch
-            anchors.fill: parent
-            visible: GlobalStates.overviewOpen && panelWindow.isFullBlur
-            onRequestClose: GlobalStates.overviewOpen = false
-            Synchronizer on searchingText {
-                property alias source: panelWindow.searchingText
-            }
+            searchWidget.setSearchingText(text);
+            searchWidget.focusFirstItem();
         }
 
         Column {
             id: columnLayout
-            visible: GlobalStates.overviewOpen && !panelWindow.isFullBlur
+            visible: GlobalStates.overviewOpen
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 top: parent.top
@@ -120,7 +94,7 @@ Scope {
             Loader {
                 id: overviewLoader
                 anchors.horizontalCenter: parent.horizontalCenter
-                active: GlobalStates.overviewOpen && !panelWindow.isFullBlur && (Config?.options.overview.enable ?? true)
+                active: GlobalStates.overviewOpen && (Config?.options.overview.enable ?? true)
                 sourceComponent: OverviewWidget {
                     screen: panelWindow.screen
                     visible: (panelWindow.searchingText == "")
