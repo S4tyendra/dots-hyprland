@@ -6,7 +6,7 @@ import QtQuick.Layouts
 
 BarWidgetSwitcher {
     id: root
-    property bool borderless: Config.options.bar.borderless
+    readonly property bool borderless: Config.options.bar.borderless === "transparent"
     property bool showDate: Config.options.bar.verbose
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time

@@ -14,11 +14,19 @@ import Quickshell.Hyprland
 
 Item {
     id: root
-    property bool borderless: Config.options.bar.borderless
-    readonly property MprisPlayer activePlayer: MprisController.activePlayer
+    readonly property MprisPlayer activePlayer: {
+        const preferred = (Config.options.bar.media.preferredPlayer ?? "").trim().toLowerCase();
+        if (preferred.length === 0) return MprisController.activePlayer;
+        const _ = MprisController.players.count;
+        for (const p of MprisController.players) {
+            if ((p.identity ?? "").toLowerCase().includes(preferred) ||
+                (p.desktopEntry ?? "").toLowerCase().includes(preferred))
+                return p;
+        }
+        return MprisController.activePlayer;
+    }
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
-
-    property list<real> visualizerPoints: []
+    readonly property list<real> visualizerPoints: CavaService.points
 
     onWidthChanged: {
         if (root.width > 100) {
@@ -58,7 +66,6 @@ Item {
     readonly property bool isPlaying: activePlayer?.playbackState === MprisPlaybackState.Playing
     readonly property bool isPaused: activePlayer != null && !root.isPlaying
     readonly property bool hasMedia: activePlayer != null && (root.isPlaying || (StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || "") !== "")
-    readonly property bool hasLyrics: root.isPlaying && LyricsService.currentLyricLine && LyricsService.currentLyricLine.length > 0
     readonly property bool isLive: {
         if (!activePlayer || !root.hasMedia) return false;
         let len = activePlayer?.length || 0;
@@ -70,29 +77,11 @@ Item {
         return false;
     }
 
-    Process {
-        id: cavaProc
-        running: root.isPlaying
-        onRunningChanged: {
-            if (!cavaProc.running) {
-                root.visualizerPoints = [];
-            }
-        }
-        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
-        stdout: SplitParser {
-            onRead: data => {
-                let points = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
-                root.visualizerPoints = points;
-            }
-        }
-    }
-
-
     implicitHeight: Appearance.sizes.barHeight
 
     Timer {
         running: root.isPlaying
-        interval: 1000
+        interval: Config.options.resources.updateInterval
         repeat: true
         onTriggered: activePlayer.positionChanged()
     }
@@ -104,7 +93,9 @@ Item {
         anchors.topMargin: 4
         anchors.bottomMargin: 4
         radius: Appearance.rounding.small
-        color: Config.options?.bar.borderless ? "transparent" : (hoverArea.containsMouse ? Appearance.colors.colLayer1Hover : Appearance.colors.colLayer1)
+        color: Config.options?.bar.borderless === "transparent"
+            ? "transparent"
+            : (hoverArea.containsMouse ? Appearance.colors.colLayer1Hover : Appearance.colors.colLayer1)
         
         border.width: 0
 
@@ -237,24 +228,9 @@ Item {
                 }
                 let rawTitle = activePlayer?.trackTitle || "";
                 let rawArtist = activePlayer?.trackArtist || "";
-                let isPlaceholder = LyricsService.isPlaceholderTitle(rawTitle);
-
-                let displayTitle = isPlaceholder ? (StringUtils.cleanMusicTitle(LyricsService.currentTrackName) || cleanedTitle) : cleanedTitle;
-                let displayArtist = isPlaceholder ? (LyricsService.currentArtistName || rawArtist) : rawArtist;
-                let baseInfo = `${displayTitle}${displayArtist ? ' • ' + displayArtist : ''}`;
-
-                if (LyricsService.currentLyricLine && LyricsService.currentLyricLine.length > 0) {
-                    return LyricsService.currentLyricLine;
-                }
-                if (LyricsService.isSupportedPlayer(activePlayer)) {
-                    if (LyricsService.loading) {
-                        return `${baseInfo} • ${LyricsService.loadingStatus}`;
-                    }
-                    if (LyricsService.lyricLines.length === 0) {
-                        return LyricsService.hasUnsyncedLyrics ? `${baseInfo} • Unsynced lyrics` : baseInfo;
-                    }
-                }
-                return baseInfo;
+                let displayTitle = cleanedTitle;
+                let displayArtist = rawArtist;
+                return `${displayTitle}${displayArtist ? ' • ' + displayArtist : ''}`;
             }
 
             readonly property bool isOverflowing: width > 0 && topBarMusicText.implicitWidth > width + 5

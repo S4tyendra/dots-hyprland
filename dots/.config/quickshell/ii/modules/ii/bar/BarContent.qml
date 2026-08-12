@@ -1,415 +1,389 @@
-import qs.modules.ii.bar.weather
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.UPower
+import Quickshell.Services.SystemTray
 import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 
-Item { // Bar content region
+Item {
     id: root
+    implicitHeight: Appearance.sizes.barHeight
+    width: parent.width
+    readonly property real barPadding: 0
+    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3
+    readonly property real centerPillX: centerPill.x
+    readonly property real centerPillWidth: centerPill.width
 
-    Component { id: compActiveWindow; ActiveWindow { Layout.fillWidth: true; Layout.fillHeight: true; visible: root.useShortenedForm === 0 } }
-    Component { id: compMedia; Media { Layout.fillWidth: true; visible: root.useShortenedForm < 2 } }
-    Component { id: compResources; Resources { alwaysShowAllResources: root.useShortenedForm === 2; Layout.fillWidth: root.useShortenedForm === 2 } }
-    Component { id: compWorkspaces; Workspaces { Layout.fillHeight: true } }
-    Component { id: compClockWidget; ClockWidget { Layout.alignment: Qt.AlignVCenter; Layout.fillWidth: true; showDate: (Config.options.bar.verbose && root.useShortenedForm < 2) } }
-    Component { id: compUtilButtons; UtilButtons { Layout.alignment: Qt.AlignVCenter; visible: (Config.options.bar.verbose && root.useShortenedForm === 0) } }
-    Component { id: compBatteryIndicator; BatteryIndicator { Layout.alignment: Qt.AlignVCenter; visible: (root.useShortenedForm < 2 && Battery.available) } }
-    Component { id: compLyrics; Lyrics { Layout.alignment: Qt.AlignVCenter; visible: (LyricsService.status === "ok" || LyricsService.status === "loading") } }
-    Component { id: compNetSpeedIndicator; NetSpeedIndicator { Layout.alignment: Qt.AlignVCenter } }
-    Component { id: compWeather; WeatherBar { visible: Config.options.bar.weather.enable; Layout.alignment: Qt.AlignVCenter } }
+    readonly property bool trayHasItems: SystemTray.items.values.length > 0
 
-    // Lyrics fills width if present (to stretch in between title and workspaces),
-    // otherwise activewindow stretches.
-    function fillsWidth(name) {
-        let n = name.trim().toLowerCase();
-        let leftLayout = Config.options.bar.layout.left.split(",").map(x => x.trim().toLowerCase());
-        if (n === "lyrics") return true;
-        if (n === "activewindow") return !leftLayout.includes("lyrics");
-        return false;
+    function filterLayout(layout) {
+        if (trayHasItems) return layout
+        return layout.filter(name => name !== "sysTray")
     }
 
-    function getComponent(name) {
-        let n = name.trim().toLowerCase();
-        if (n === "activewindow") return compActiveWindow;
-        if (n === "media") return compMedia;
-        if (n === "resources") return compResources;
-        if (n === "workspaces") return compWorkspaces;
-        if (n === "clock") return compClockWidget;
-        if (n === "utils") return compUtilButtons;
-        if (n === "battery") return compBatteryIndicator;
-        if (n === "lyrics") return compLyrics;
-        if (n === "netspeed") return compNetSpeedIndicator;
-        if (n === "weather") return compWeather;
-        return null;
+    readonly property var effectiveLeftLayout:   filterLayout(Config.options.bar.layouts.leftLayout)
+    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.layouts.middleLayout)
+    readonly property var effectiveRightLayout:  filterLayout(Config.options.bar.layouts.rightLayout)
+
+    function getWidgetUrl(name) {
+        if (!name) return "";
+        let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+        return Qt.resolvedUrl("./" + formattedName + ".qml");
     }
 
+    function getMirroredForIndex(layout, idx) {
+        const prevCount = layout.slice(0, idx).filter(w => w === "visualizer").length
+        return prevCount % 2 === 1
+    }
+
+    function shouldPaintMaterialPill(name) {
+        if (Config.options.bar.cornerStyle !== 3) return false;
+        const blacklist = ["workspaces", "divisor", "powerButton", "docktoPanel", "leftSidebarButton", "activeWindow"];
+        if (blacklist.includes(name)) {
+            return false;
+        }
+        return true;
+    }
+
+    function getMaterialPillColor(name) {
+        if (Config.options.bar.cornerStyle !== 3) return Appearance.colors.colPrimaryContainer;
+        switch(name) {
+            case "media":
+            case "sysTray":
+                return Appearance.colors.colSecondaryContainer;
+            case "resources":
+                return Appearance.colors.colTertiaryContainer;
+            case "systemIcons":
+                return Appearance.colors.colPrimary; 
+            default:
+                return Appearance.colors.colPrimaryContainer;
+        }
+    }
 
     property var screen: root.QsWindow.window?.screen
-    property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
-    readonly property int centerSideModuleWidth: (useShortenedForm == 2) ? Appearance.sizes.barCenterSideModuleWidthHellaShortened : (useShortenedForm == 1) ? Appearance.sizes.barCenterSideModuleWidthShortened : Appearance.sizes.barCenterSideModuleWidth
 
-    component VerticalBarSeparator: Rectangle {
-        Layout.topMargin: Appearance.sizes.baseBarHeight / 3
-        Layout.bottomMargin: Appearance.sizes.baseBarHeight / 3
-        Layout.fillHeight: true
-        implicitWidth: 1
-        color: Appearance.colors.colOutlineVariant
-    }
 
-    // Background shadow
-    Loader {
-        active: Config.options.bar.showBackground && Config.options.bar.cornerStyle === 1 && Config.options.bar.floatStyleShadow
-        anchors.fill: barBackground
-        sourceComponent: StyledRectangularShadow {
-            anchors.fill: undefined // The loader's anchors act on this, and this should not have any anchor
-            target: barBackground
-        }
-    }
-    // Background
     Rectangle {
         id: barBackground
-        anchors {
-            fill: parent
-            margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut) : 0 // idk why but +1 is needed
-        }
-        color: Config.options.bar.showBackground ? Appearance.colors.colLayer0 : "transparent"
+        anchors.fill: parent
+        anchors.margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
+        color: (!centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) 
+            ? Appearance.colors.colLayer0 : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        border.width: (!centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
     }
 
-    FocusedScrollMouseArea { // Left side | scroll to change brightness
-        id: barLeftSideMouseArea
+    // center-only
+    readonly property bool centerOnly: !root.isMaterial
+        && root.effectiveLeftLayout.length === 0
+        && root.effectiveRightLayout.length === 0
 
-        anchors {
-            top: parent.top
-            bottom: parent.bottom
-            left: parent.left
-            right: middleSection.left
-        }
-        implicitWidth: leftSectionRowLayout.implicitWidth
-        implicitHeight: Appearance.sizes.baseBarHeight
+    Rectangle {
+        id: centerPill
+        visible: centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: middleRow.implicitWidth + 10
+        height: parent.height - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
+        color: Appearance.colors.colLayer0
+        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        border.color: Appearance.colors.colLayer0Border
 
-        onScrollDown: Brightness.decreaseBrightness()
-        onScrollUp: Brightness.increaseBrightness()
-        onMovedAway: GlobalStates.osdBrightnessOpen = false
-        onPressed: event => {
-            if (event.button === Qt.LeftButton)
-                GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen;
-        }
+        bottomLeftRadius:  Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        topLeftRadius:     Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
+        topRightRadius:    Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
+    }
 
-        // Visual content
-        ScrollHint {
-            reveal: barLeftSideMouseArea.hovered
-            icon: Hyprsunset.gamma === 100 ? "light_mode" : "wb_twilight"
-            tooltipText: Translation.tr("Scroll to change brightness")
-            side: "left"
+    Item {
+        id: contentContainer
+        anchors.fill: barBackground
+        anchors.margins: root.barPadding
+
+        // Left
+        Item {
             anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-        }
+            anchors.leftMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : 10)
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: root.isMaterial ? leftMaterialPill.implicitWidth : leftRow.implicitWidth
 
-        RowLayout {
-            id: leftSectionRowLayout
-            anchors.fill: parent
-            spacing: 0
-
-            LeftSidebarButton { // Left sidebar button
-                id: leftSidebarButton
-                Layout.alignment: Qt.AlignVCenter
-                Layout.leftMargin: Appearance.rounding.screenRounding
-                colBackground: barLeftSideMouseArea.hovered ? Appearance.colors.colLayer1Hover : ColorUtils.transparentize(Appearance.colors.colLayer1Hover, 1)
-            }
-
-            Repeater {
-                model: Config.options.bar.layout.left.split(",").filter(x => x.trim() !== "")
-                Loader {
-                    id: leftLoader
-                    sourceComponent: root.getComponent(modelData)
-                    Layout.leftMargin: 10 + (index === 0 && leftSidebarButton.visible ? 0 : Appearance.rounding.screenRounding)
-                    Layout.rightMargin: Appearance.rounding.screenRounding
-                    // Only activewindow stretches — lyrics and others use their own implicitWidth
-                    Layout.fillWidth: root.fillsWidth(modelData)
-                    Layout.fillHeight: true
-                    Layout.maximumWidth: modelData.trim().toLowerCase() === "activewindow" ? 250 : 9999
-                    width: implicitWidth
-                    height: implicitHeight
-                    Binding {
-                        target: leftLoader.item
-                        property: "width"
-                        value: leftLoader.width
-                    }
-                    Binding {
-                        target: leftLoader.item
-                        property: "height"
-                        value: leftLoader.height
-                    }
-                }
-            }
-        }
-    }
-
-    Row { // Middle section
-        id: middleSection
-        anchors {
-            top: parent.top
-            bottom: parent.bottom
-            horizontalCenter: parent.horizontalCenter
-        }
-        spacing: 4
-
-        BarGroup {
-            id: leftCenterGroup
-            anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: root.centerSideModuleWidth
-
-            Repeater {
-                model: Config.options.bar.layout.centerLeft.split(",").filter(x => x.trim() !== "")
-                Loader {
-                    id: clLoader
-                    sourceComponent: root.getComponent(modelData)
-                    Layout.fillWidth: modelData === "media" || (modelData === "resources" && root.useShortenedForm === 2)
-                    width: implicitWidth
-                    height: implicitHeight
-                    Binding {
-                        target: clLoader.item
-                        property: "width"
-                        value: clLoader.width
-                    }
-                    Binding {
-                        target: clLoader.item
-                        property: "height"
-                        value: clLoader.height
-                    }
-                }
-            }
-        }
-
-        VerticalBarSeparator {
-            visible: Config.options?.bar.borderless
-        }
-
-        BarGroup {
-            id: middleCenterGroup
-            anchors.verticalCenter: parent.verticalCenter
-            padding: 4
-
-            Repeater {
-                model: Config.options.bar.layout.center.split(",").filter(x => x.trim() !== "")
-                Loader {
-                    sourceComponent: root.getComponent(modelData)
-                    Layout.fillHeight: true
-                }
-            }
-        }
-
-        VerticalBarSeparator {
-            visible: Config.options?.bar.borderless
-        }
-
-        MouseArea {
-            id: rightCenterGroup
-            anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: root.centerSideModuleWidth
-            implicitHeight: rightCenterGroupContent.implicitHeight
-
-            onPressed: {
-                GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
-            }
-
-            BarGroup {
-                id: rightCenterGroupContent
-                anchors.fill: parent
-
-                Repeater {
-                    model: Config.options.bar.layout.centerRight.split(",").filter(x => x.trim() !== "")
-                    Loader {
-                        sourceComponent: root.getComponent(modelData)
-                        Layout.fillWidth: modelData.trim().toLowerCase() === "clock"
-                    }
-                }
-            }
-        }
-
-        VerticalBarSeparator {
-            visible: Config.options?.bar.borderless && Config.options.bar.layout.right.split(",").filter(x => x.trim() !== "").length > 0
-        }
-
-        BarGroup {
-            id: rightGroup
-            anchors.verticalCenter: parent.verticalCenter
-            visible: Config.options.bar.layout.right.split(",").filter(x => x.trim() !== "").length > 0
-
-            Repeater {
-                model: Config.options.bar.layout.right.split(",").filter(x => x.trim() !== "")
-                Loader {
-                    sourceComponent: root.getComponent(modelData)
-                }
-            }
-        }
-    }
-
-    FocusedScrollMouseArea { // Right side | scroll to change volume
-        id: barRightSideMouseArea
-
-        anchors {
-            top: parent.top
-            bottom: parent.bottom
-            left: middleSection.right
-            right: parent.right
-        }
-        implicitWidth: rightSectionRowLayout.implicitWidth
-        implicitHeight: Appearance.sizes.baseBarHeight
-
-        onScrollDown: Audio.decrementVolume();
-        onScrollUp: Audio.incrementVolume();
-        onMovedAway: GlobalStates.osdVolumeOpen = false;
-        onPressed: event => {
-            if (event.button === Qt.LeftButton) {
-                GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
-            }
-        }
-
-        // Visual content
-        ScrollHint {
-            reveal: barRightSideMouseArea.hovered
-            icon: "volume_up"
-            tooltipText: Translation.tr("Scroll to change volume")
-            side: "right"
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        RowLayout {
-            id: rightSectionRowLayout
-            anchors.fill: parent
-            spacing: 5
-            layoutDirection: Qt.RightToLeft
-
-            RippleButton { // Right sidebar button
-                id: rightSidebarButton
-
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                Layout.rightMargin: Appearance.rounding.screenRounding
-                Layout.fillWidth: false
-
-                implicitWidth: indicatorsRowLayout.implicitWidth + 10 * 2
-                implicitHeight: indicatorsRowLayout.implicitHeight + 5 * 2
-
-                buttonRadius: Appearance.rounding.full
-                colBackground: barRightSideMouseArea.hovered ? Appearance.colors.colLayer1Hover : ColorUtils.transparentize(Appearance.colors.colLayer1Hover, 1)
-                colBackgroundHover: Appearance.colors.colLayer1Hover
-                colRipple: Appearance.colors.colLayer1Active
-                colBackgroundToggled: Appearance.colors.colSecondaryContainer
-                colBackgroundToggledHover: Appearance.colors.colSecondaryContainerHover
-                colRippleToggled: Appearance.colors.colSecondaryContainerActive
-                toggled: GlobalStates.sidebarRightOpen
-                property color colText: toggled ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnLayer0
-
-                Behavior on colText {
-                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                }
-
-                onPressed: {
-                    GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
-                }
+            // Material pill wrapper
+            Rectangle {
+                id: leftMaterialPill
+                visible: root.isMaterial
+                anchors.centerIn: parent
+                implicitWidth: leftMaterialRow.implicitWidth + 10
+                implicitHeight: leftMaterialRow.implicitHeight
+                radius: Appearance.rounding.full
+                color: Appearance.colors.colLayer0
 
                 RowLayout {
-                    id: indicatorsRowLayout
+                    id: leftMaterialRow
                     anchors.centerIn: parent
-                    property real realSpacing: 15
-                    spacing: 0
+                    spacing: 3
 
-                    Revealer {
-                        reveal: Audio.sink?.audio?.muted ?? false
-                        Layout.fillHeight: true
-                        Layout.rightMargin: reveal ? indicatorsRowLayout.realSpacing : 0
-                        Behavior on Layout.rightMargin {
-                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                        }
-                        MaterialSymbol {
-                            text: "volume_off"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: rightSidebarButton.colText
-                        }
+                    Repeater {
+                        model: root.effectiveLeftLayout
+                        delegate: leftMaterialGroupDelegate
                     }
-                    Revealer {
-                        reveal: Audio.source?.audio?.muted ?? false
-                        Layout.fillHeight: true
-                        Layout.rightMargin: reveal ? indicatorsRowLayout.realSpacing : 0
-                        Behavior on Layout.rightMargin {
-                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+
+                    Component {
+                        id: leftMaterialGroupDelegate
+                        BarGroup {
+                            Layout.fillHeight: true
+                            currentIndex: index
+                            totalCount: root.effectiveLeftLayout.length
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
+                            bgColor: root.getMaterialPillColor(modelData)
+                            Loader {
+                                Layout.fillHeight: true
+                                source: root.getWidgetUrl(modelData)
+                                onLoaded: {
+                                    if (item && item.hasOwnProperty("isMirrored"))
+                                        item.isMirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
+                                }
+                            }
                         }
-                        MaterialSymbol {
-                            text: "mic_off"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: rightSidebarButton.colText
-                        }
-                    }
-                    HyprlandXkbIndicator {
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.rightMargin: indicatorsRowLayout.realSpacing
-                        color: rightSidebarButton.colText
-                    }
-                    Revealer {
-                        reveal: Notifications.silent || Notifications.unread > 0
-                        Layout.fillHeight: true
-                        Layout.rightMargin: reveal ? indicatorsRowLayout.realSpacing : 0
-                        implicitHeight: reveal ? notificationUnreadCount.implicitHeight : 0
-                        implicitWidth: reveal ? notificationUnreadCount.implicitWidth : 0
-                        Behavior on Layout.rightMargin {
-                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                        }
-                        NotificationUnreadCount {
-                            id: notificationUnreadCount
-                        }
-                    }
-                    Revealer {
-                        reveal: Idle.inhibit
-                        Layout.fillHeight: true
-                        Layout.rightMargin: reveal ? indicatorsRowLayout.realSpacing : 0
-                        Behavior on Layout.rightMargin {
-                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                        }
-                        MaterialSymbol {
-                            text: "coffee"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: rightSidebarButton.colText
-                        }
-                    }
-                    MaterialSymbol {
-                        text: Network.materialSymbol
-                        iconSize: Appearance.font.pixelSize.larger
-                        color: rightSidebarButton.colText
-                    }
-                    MaterialSymbol {
-                        Layout.leftMargin: indicatorsRowLayout.realSpacing
-                        visible: BluetoothStatus.available
-                        text: BluetoothStatus.connected ? "bluetooth_connected" : BluetoothStatus.enabled ? "bluetooth" : "bluetooth_disabled"
-                        iconSize: Appearance.font.pixelSize.larger
-                        color: rightSidebarButton.colText
                     }
                 }
             }
 
-            SysTray {
-                visible: root.useShortenedForm === 0
-                Layout.fillWidth: false
-                Layout.fillHeight: true
-                invertSide: Config?.options.bar.bottom
+            // Non-material layout
+            RowLayout {
+                id: leftRow
+                visible: !root.isMaterial
+                anchors.fill: parent
+                spacing: Config.options.bar.borderless === "transparent" ? -7 : 2
+
+                Repeater {
+                    model: root.effectiveLeftLayout
+                    delegate: leftBarGroupDelegate
+                }
+
+                Component {
+                    id: leftBarGroupDelegate
+                    BarGroup {
+                        Layout.fillHeight: true
+                        currentIndex: index
+                        totalCount: root.effectiveLeftLayout.length
+                        Loader {
+                            Layout.fillHeight: true
+                            source: root.getWidgetUrl(modelData)
+                            onLoaded: {
+                                if (item && item.hasOwnProperty("isMirrored"))
+                                    item.isMirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
+                            }
+                        }
+                    }
+                }
+
+                Component {
+                    id: leftNoGroupDelegate
+                    Loader {
+                        Layout.fillHeight: false
+                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
+                        Layout.alignment: Qt.AlignVCenter
+                        source: root.getWidgetUrl(modelData)
+                        onLoaded: {
+                            if (item && item.hasOwnProperty("isMirrored"))
+                                item.isMirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Center
+        Item {
+            id: absoluteCenter
+            anchors.centerIn: parent
+            width: root.isMaterial ? centerMaterialPill.implicitWidth : middleRow.implicitWidth
+            height: parent.height
+
+            // Material pill wrapper
+            Rectangle {
+                id: centerMaterialPill
+                visible: root.isMaterial
+                anchors.centerIn: parent
+                implicitWidth: centerMaterialRow.implicitWidth + 10
+                implicitHeight: centerMaterialRow.implicitHeight 
+                radius: Appearance.rounding.full
+                color: Appearance.colors.colLayer0
+
+                RowLayout {
+                    id: centerMaterialRow
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    Repeater {
+                        model: root.effectiveMiddleLayout
+                        delegate: middleMaterialGroupDelegate
+                    }
+
+                    Component {
+                        id: middleMaterialGroupDelegate
+                        BarGroup {
+                            Layout.fillHeight: true
+                            currentIndex: index
+                            totalCount: root.effectiveMiddleLayout.length
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
+                            bgColor: root.getMaterialPillColor(modelData)
+                            Loader {
+                                Layout.fillHeight: true
+                                source: root.getWidgetUrl(modelData)
+                                onLoaded: {
+                                    if (item && item.hasOwnProperty("isMirrored"))
+                                        item.isMirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
-            Item {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            // Non-material layout
+            RowLayout {
+                id: middleRow
+                visible: !root.isMaterial
+                anchors.fill: parent
+                spacing: Config.options.bar.borderless === "transparent" ? -7 : 2
+
+                Repeater {
+                    model: root.effectiveMiddleLayout
+                    delegate: middleBarGroupDelegate
+                }
+
+                Component {
+                    id: middleBarGroupDelegate
+                    BarGroup {
+                        Layout.fillHeight: true
+                        currentIndex: index
+                        totalCount: root.effectiveMiddleLayout.length
+                        Loader {
+                            Layout.fillHeight: true
+                            source: root.getWidgetUrl(modelData)
+                            onLoaded: {
+                                if (item && item.hasOwnProperty("isMirrored"))
+                                    item.isMirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
+                            }
+                        }
+                    }
+                }
+
+                Component {
+                    id: middleNoGroupDelegate
+                    Loader {
+                        Layout.fillHeight: false
+                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
+                        source: root.getWidgetUrl(modelData)
+                        onLoaded: {
+                            if (item && item.hasOwnProperty("isMirrored"))
+                                item.isMirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Right
+        Item {
+            anchors.right: parent.right
+            anchors.rightMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : 10)
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: root.isMaterial ? rightMaterialPill.implicitWidth : rightRow.implicitWidth
+
+            // Material pill wrapper
+            Rectangle {
+                id: rightMaterialPill
+                visible: root.isMaterial
+                anchors.centerIn: parent
+                implicitWidth: rightMaterialRow.implicitWidth + 10
+                implicitHeight: rightMaterialRow.implicitHeight 
+                radius: Appearance.rounding.full
+                color: Appearance.colors.colLayer0
+
+                RowLayout {
+                    id: rightMaterialRow
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    Repeater {
+                        model: root.effectiveRightLayout
+                        delegate: rightMaterialGroupDelegate
+                    }
+
+                    Component {
+                        id: rightMaterialGroupDelegate
+                        BarGroup {
+                            Layout.fillHeight: true
+                            currentIndex: index
+                            totalCount: root.effectiveRightLayout.length
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
+                            bgColor: root.getMaterialPillColor(modelData)
+                            Loader {
+                                Layout.fillHeight: true
+                                source: root.getWidgetUrl(modelData)
+                                onLoaded: {
+                                    if (item && item.hasOwnProperty("isMirrored"))
+                                        item.isMirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
+            // Non-material layout
+            RowLayout {
+                id: rightRow
+                visible: !root.isMaterial
+                anchors.fill: parent
+                spacing: Config.options.bar.borderless === "transparent" ? -7 : 2
 
+                Repeater {
+                    model: root.effectiveRightLayout
+                    delegate: rightBarGroupDelegate
+                }
+
+                Component {
+                    id: rightBarGroupDelegate
+                    BarGroup {
+                        Layout.fillHeight: true
+                        currentIndex: index
+                        totalCount: root.effectiveRightLayout.length
+                        Loader {
+                            Layout.fillHeight: true
+                            source: root.getWidgetUrl(modelData)
+                            onLoaded: {
+                                if (item && item.hasOwnProperty("isMirrored"))
+                                    item.isMirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                            }
+                        }
+                    }
+                }
+
+                Component {
+                    id: rightNoGroupDelegate
+                    Loader {
+                        Layout.fillHeight: false
+                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
+                        source: root.getWidgetUrl(modelData)
+                        onLoaded: {
+                            if (item && item.hasOwnProperty("isMirrored"))
+                                item.isMirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                        }
+                    }
+                }
+            }
         }
     }
 }
