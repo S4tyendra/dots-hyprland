@@ -143,18 +143,10 @@ Scope { // Scope
                 anchors.leftMargin: Appearance.sizes.hyprlandGapsOut
                 width: panelWindow.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
                 height: parent.height - Appearance.sizes.hyprlandGapsOut * 2
-                color: "transparent"
+                color: Appearance.colors.colLayer0
                 border.width: 1
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
-
-                PreBlurredBackground {
-                    panelX: sidebarLeftBackground.mapToItem(null, 0, 0).x
-                    panelY: sidebarLeftBackground.mapToItem(null, 0, 0).y
-                    screenW: panelWindow.screenW
-                    screenH: panelWindow.screenH
-                    cornerRadius: sidebarLeftBackground.radius
-                }
 
                 Behavior on width {
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)

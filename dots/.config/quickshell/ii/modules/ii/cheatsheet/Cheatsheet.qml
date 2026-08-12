@@ -74,16 +74,10 @@ Scope { // Scope
             Rectangle {
                 id: cheatsheetBackground
                 anchors.centerIn: parent
-                color: "transparent"
+                color: Appearance.colors.colLayer0
                 border.width: 1
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.windowRounding
-
-                PreBlurredBackground {
-                    panelX: cheatsheetBackground.x
-                    panelY: cheatsheetBackground.y
-                    cornerRadius: cheatsheetBackground.radius
-                }
                 property real padding: 20
                 implicitWidth: cheatsheetColumnLayout.implicitWidth + padding * 2
                 implicitHeight: cheatsheetColumnLayout.implicitHeight + padding * 2

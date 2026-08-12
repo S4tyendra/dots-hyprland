@@ -132,13 +132,6 @@ Item { // Notification item area
                 (Appearance.colors.colLayer3) :
             ColorUtils.transparentize(Appearance.colors.colLayer3)
 
-        PreBlurredBackground {
-            panelX: background.mapToItem(null, 0, 0).x
-            panelY: background.mapToItem(null, 0, 0).y
-            cornerRadius: background.radius
-            tintOpacity: 0.55
-        }
-
         implicitHeight: expanded ? (contentColumn.implicitHeight + padding * 2) : summaryRow.implicitHeight
         Behavior on implicitHeight {
             animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
