@@ -107,6 +107,58 @@ Item {
         anchors.fill: barBackground
         anchors.margins: root.barPadding
 
+        FocusedScrollMouseArea {
+            id: barLeftSideMouseArea
+            anchors {
+                top: parent.top
+                bottom: parent.bottom
+                left: parent.left
+                right: absoluteCenter.left
+            }
+            onScrollDown: Brightness.decreaseBrightness()
+            onScrollUp: Brightness.increaseBrightness()
+            onMovedAway: GlobalStates.osdBrightnessOpen = false
+            onPressed: event => {
+                if (event.button === Qt.LeftButton)
+                    GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen;
+            }
+
+            ScrollHint {
+                reveal: barLeftSideMouseArea.hovered
+                icon: Hyprsunset.gamma === 100 ? "light_mode" : "wb_twilight"
+                tooltipText: Translation.tr("Scroll to change brightness")
+                side: "left"
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+
+        FocusedScrollMouseArea {
+            id: barRightSideMouseArea
+            anchors {
+                top: parent.top
+                bottom: parent.bottom
+                left: absoluteCenter.right
+                right: parent.right
+            }
+            onScrollDown: Audio.decrementVolume()
+            onScrollUp: Audio.incrementVolume()
+            onMovedAway: GlobalStates.osdVolumeOpen = false
+            onPressed: event => {
+                if (event.button === Qt.LeftButton)
+                    GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
+            }
+
+            ScrollHint {
+                reveal: barRightSideMouseArea.hovered
+                icon: "volume_up"
+                tooltipText: Translation.tr("Scroll to change volume")
+                side: "right"
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+
         // Left
         Item {
             anchors.left: parent.left

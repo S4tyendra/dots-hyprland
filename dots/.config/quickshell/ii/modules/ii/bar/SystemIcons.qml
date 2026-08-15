@@ -33,50 +33,50 @@ Item {
             }
             GlobalStates.osdVolumeOpen = true;
         }
-    }
 
-    Flow {
-        id: flow
-        anchors.centerIn: parent
-        flow: root.vertical ? Flow.TopToBottom : Flow.LeftToRight
-        spacing: isMaterial ? 2 : 10
+        Flow {
+            id: flow
+            anchors.centerIn: parent
+            flow: root.vertical ? Flow.TopToBottom : Flow.LeftToRight
+            spacing: isMaterial ? 2 : 10
 
-        Revealer {
-            reveal: true
+            Revealer {
+                reveal: true
+                MaterialSymbol {
+                    text: Audio.sink?.audio?.muted ? "volume_off" : "volume_up"
+                    iconSize: Appearance.font.pixelSize.larger
+                    color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                }
+            }
+            Revealer {
+                reveal: Audio.source?.audio?.muted ?? false
+                MaterialSymbol {
+                    text: "mic_off"
+                    iconSize: Appearance.font.pixelSize.larger
+                    color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                }
+            }
+            Loader {
+                source: "HyprlandXkbIndicator.qml"
+                onLoaded: item.color = root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+            }
             MaterialSymbol {
-                text: Audio.sink?.audio?.muted ? "volume_off" : "volume_up"
+                text: Network.materialSymbol
                 iconSize: Appearance.font.pixelSize.larger
                 color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
             }
-        }
-        Revealer {
-            reveal: Audio.source?.audio?.muted ?? false
             MaterialSymbol {
-                text: "mic_off"
+                visible: BluetoothStatus.available
+                text: BluetoothStatus.connected ? "bluetooth_connected" : BluetoothStatus.enabled ? "bluetooth" : "bluetooth_disabled"
                 iconSize: Appearance.font.pixelSize.larger
                 color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
             }
-        }
-        Loader {
-            source: "HyprlandXkbIndicator.qml"
-            onLoaded: item.color = root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
-        }
-        MaterialSymbol {
-            text: Network.materialSymbol
-            iconSize: Appearance.font.pixelSize.larger
-            color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
-        }
-        MaterialSymbol {
-            visible: BluetoothStatus.available
-            text: BluetoothStatus.connected ? "bluetooth_connected" : BluetoothStatus.enabled ? "bluetooth" : "bluetooth_disabled"
-            iconSize: Appearance.font.pixelSize.larger
-            color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
-        }
-        Loader {
-            id: notifLoader
-            active: Notifications.silent || Notifications.unread > 0
-            visible: active
-            source: "NotificationUnreadCount.qml"
+            Loader {
+                id: notifLoader
+                active: Notifications.silent || Notifications.unread > 0
+                visible: active
+                source: "NotificationUnreadCount.qml"
+            }
         }
     }
 }
