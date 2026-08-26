@@ -609,6 +609,17 @@ ContentPage {
                 }
                 ConfigSpinBox {
                     icon: "width"
+                    text: Translation.tr("Min media width")
+                    value: Config.options.bar.media.minWidth
+                    from: 80
+                    to: 500
+                    stepSize: 10
+                    onValueChanged: {
+                        Config.options.bar.media.minWidth = value;
+                    }
+                }
+                ConfigSpinBox {
+                    icon: "width"
                     text: Translation.tr("Max media width")
                     value: Config.options.bar.media.maxWidth
                     from: 100

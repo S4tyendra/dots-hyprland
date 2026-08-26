@@ -248,7 +248,7 @@ LockScreen {
             id: passwordInputWrapper
             Layout.topMargin: 10
             Layout.alignment: Qt.AlignHCenter
-            Layout.bottomMargin: 132
+            Layout.bottomMargin: HyprlandXkb.capsLock ? 110 : 132
             color: "transparent"
             implicitWidth: 296
             implicitHeight: 36
@@ -352,6 +352,15 @@ LockScreen {
                     radius: passwordInputWrapper.radius
                 }
             }
+        }
+
+        WText {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: -100
+            visible: HyprlandXkb.capsLock
+            text: Translation.tr("Caps Lock is on")
+            color: Appearance.colors.colError
+            font.pixelSize: 12
         }
 
         Item {}

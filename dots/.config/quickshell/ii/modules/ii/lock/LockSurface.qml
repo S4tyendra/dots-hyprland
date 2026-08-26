@@ -397,6 +397,20 @@ MouseArea {
         }
     }
 
+    StyledText {
+        anchors {
+            horizontalCenter: mainIsland.horizontalCenter
+            bottom: mainIsland.top
+            bottomMargin: 10
+        }
+        visible: HyprlandXkb.capsLock
+        opacity: root.toolbarOpacity
+        text: Translation.tr("Caps Lock is on")
+        color: Appearance.colors.colError
+        font.pixelSize: Appearance.font.pixelSize.small
+        font.weight: Font.DemiBold
+    }
+
     // Left toolbar
     Toolbar {
         id: leftIsland

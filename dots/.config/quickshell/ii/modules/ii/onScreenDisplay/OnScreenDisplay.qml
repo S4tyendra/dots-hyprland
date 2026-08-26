@@ -29,6 +29,14 @@ Scope {
             id: "gamma",
             sourceUrl: "indicators/GammaIndicator.qml"
         },
+        {
+            id: "capsLock",
+            sourceUrl: "indicators/CapsLockIndicator.qml"
+        },
+        {
+            id: "numLock",
+            sourceUrl: "indicators/NumLockIndicator.qml"
+        },
     ]
 
     function triggerOsd() {
@@ -88,6 +96,26 @@ Scope {
         function onSinkProtectionTriggered(reason) {
             root.protectionMessage = reason;
             root.currentIndicator = "volume";
+            root.triggerOsd();
+        }
+    }
+
+    Connections {
+        target: HyprlandXkb
+        function onCapsLockChanged() {
+            if (!HyprlandXkb.lockStateReady) return;
+            if (GlobalStates.screenLocked) return;
+            if (!(Config.options.osd.capsLock ?? true)) return;
+            root.protectionMessage = "";
+            root.currentIndicator = "capsLock";
+            root.triggerOsd();
+        }
+        function onNumLockChanged() {
+            if (!HyprlandXkb.lockStateReady) return;
+            if (GlobalStates.screenLocked) return;
+            if (!(Config.options.osd.numLock ?? false)) return;
+            root.protectionMessage = "";
+            root.currentIndicator = "numLock";
             root.triggerOsd();
         }
     }

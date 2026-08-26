@@ -5,9 +5,11 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import qs.modules.common
+import qs.modules.common.functions
 
 /**
  * Exposes the active Hyprland Xkb keyboard layout name and code for indicators.
+ * Also tracks Caps Lock / Num Lock on the main keyboard.
  */
 Singleton {
     id: root
@@ -16,9 +18,13 @@ Singleton {
     property var cachedLayoutCodes: ({})
     property string currentLayoutName: ""
     property string currentLayoutCode: ""
+    property bool capsLock: false
+    property bool numLock: false
+    property bool lockStateReady: false
     // For the service
     property var baseLayoutFilePath: "/usr/share/X11/xkb/rules/base.lst"
     property bool needsLayoutRefresh: false
+    property bool lockWatchRestartPending: false
 
     // Update the layout code according to the layout name (Hyprland gives the name not the code)
     onCurrentLayoutNameChanged: root.updateLayoutCode()
@@ -83,8 +89,12 @@ Singleton {
             onStreamFinished: {
                 const parsedOutput = JSON.parse(devicesCollector.text);
                 const hyprlandKeyboard = parsedOutput["keyboards"].find(kb => kb.main === true);
+                if (!hyprlandKeyboard) return;
                 root.layoutCodes = hyprlandKeyboard["layout"].split(",");
                 root.currentLayoutName = hyprlandKeyboard["active_keymap"];
+                root.capsLock = !!hyprlandKeyboard["capsLock"];
+                root.numLock = !!hyprlandKeyboard["numLock"];
+                root.lockStateReady = true;
                 // console.log("[HyprlandXkb] Fetched | Layouts (multiple: " + (root.layoutCodes.length > 1) + "): "
                 //     + root.layoutCodes.join(", ") + " | Active: " + root.currentLayoutName);
             }
@@ -113,6 +123,34 @@ Singleton {
             } else if (event.name == "configreloaded") {
                 // Mark layout code list to be updated when config is reloaded
                 root.needsLayoutRefresh = true;
+            }
+        }
+    }
+
+    Timer {
+        id: lockWatchRestartTimer
+        interval: 500
+        repeat: false
+        onTriggered: root.lockWatchRestartPending = false
+    }
+
+    Process {
+        id: lockWatchProc
+        running: !root.lockWatchRestartPending
+        command: ["python3", "-u", FileUtils.trimFileProtocol(`${Directories.scriptPath}/hyprland/watch-lock-keys.py`)]
+        stdout: SplitParser {
+            onRead: data => {
+                const parts = String(data).trim().split(/\s+/);
+                if (parts.length < 2) return;
+                root.capsLock = parts[0] === "1";
+                root.numLock = parts[1] === "1";
+                root.lockStateReady = true;
+            }
+        }
+        onRunningChanged: {
+            if (!running && !root.lockWatchRestartPending) {
+                root.lockWatchRestartPending = true;
+                lockWatchRestartTimer.restart();
             }
         }
     }

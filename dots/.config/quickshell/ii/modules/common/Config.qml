@@ -396,7 +396,7 @@ Singleton {
                     property bool alwaysVisible: false
                     property bool onlyTitle: false
                     property int maxWidth: 550
-                    property int minWidth: 100
+                    property int minWidth: 180
                 }
                 property JsonObject tooltips: JsonObject {
                     property bool clickToShow: false
@@ -528,6 +528,8 @@ Singleton {
 
             property JsonObject osd: JsonObject {
                 property int timeout: 1000
+                property bool capsLock: true
+                property bool numLock: false
             }
 
             property JsonObject osk: JsonObject {

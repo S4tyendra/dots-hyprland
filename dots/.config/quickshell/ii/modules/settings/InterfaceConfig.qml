@@ -706,6 +706,24 @@ ContentPage {
                 Config.options.osd.timeout = value;
             }
         }
+
+        ConfigSwitch {
+            buttonIcon: "keyboard_capslock"
+            text: Translation.tr("Show Caps Lock OSD")
+            checked: Config.options.osd.capsLock
+            onCheckedChanged: {
+                Config.options.osd.capsLock = checked;
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "filter_1"
+            text: Translation.tr("Show Num Lock OSD")
+            checked: Config.options.osd.numLock
+            onCheckedChanged: {
+                Config.options.osd.numLock = checked;
+            }
+        }
     }
 
     ContentSection {

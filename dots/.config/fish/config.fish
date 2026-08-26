@@ -24,6 +24,7 @@ if status is-interactive
     alias claer "printf '\033[2J\033[3J\033[1;1H'"
     alias pamcan pacman
     alias q 'qs -c ii'
+    alias relock '~/.config/hypr/hyprland/scripts/restore-qs-lock.sh'
     if test "$TERM" != "linux"
         alias ls 'eza --icons=auto'
     end

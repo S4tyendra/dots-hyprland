@@ -25,6 +25,16 @@ Scope {
             sourceUrl: "BrightnessOSD.qml",
             globalStateValue: "osdBrightnessOpen"
         },
+        {
+            id: "capsLock",
+            sourceUrl: "CapsLockOSD.qml",
+            globalStateValue: "osdVolumeOpen"
+        },
+        {
+            id: "numLock",
+            sourceUrl: "NumLockOSD.qml",
+            globalStateValue: "osdVolumeOpen"
+        },
     ]
 
     function triggerBrightnessOsd() {
@@ -55,6 +65,24 @@ Scope {
         function onMutedChanged() {
             if (Audio.ready)
                 root.triggerVolumeOSD();
+        }
+    }
+
+    Connections {
+        target: HyprlandXkb
+        function onCapsLockChanged() {
+            if (!HyprlandXkb.lockStateReady) return;
+            if (GlobalStates.screenLocked) return;
+            if (!(Config.options.osd.capsLock ?? true)) return;
+            root.currentIndicator = "capsLock";
+            GlobalStates.osdVolumeOpen = true;
+        }
+        function onNumLockChanged() {
+            if (!HyprlandXkb.lockStateReady) return;
+            if (GlobalStates.screenLocked) return;
+            if (!(Config.options.osd.numLock ?? false)) return;
+            root.currentIndicator = "numLock";
+            GlobalStates.osdVolumeOpen = true;
         }
     }
 

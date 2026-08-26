@@ -44,9 +44,48 @@ Item {
         }
     }
 
+    readonly property int mediaMinWidth: Config.options.bar.media.minWidth
+    readonly property int mediaMaxWidth: Config.options.bar.media.maxWidth
+    readonly property int mediaControlSize: 20
+    readonly property int mediaControlsWidth: root.hasMedia ? (mediaControlSize * 3) : 0
+    readonly property int mediaChromeWidth: 20 + 4 + 10 + 8 + (root.hasMedia ? (4 + mediaControlsWidth) : 0) // icon + spacing + margins + controls
+
     Layout.fillHeight: true
-    implicitWidth: rowLayout.implicitWidth + rowLayout.spacing * 2
+    Layout.minimumWidth: mediaMinWidth
+    Layout.maximumWidth: mediaMaxWidth
+    implicitWidth: {
+        const textW = (topBarTextContainer.displayText && topBarTextContainer.displayText.length > 0)
+            ? topBarMusicText.implicitWidth
+            : 0;
+        return Math.round(Math.min(mediaMaxWidth, Math.max(mediaMinWidth, mediaChromeWidth + textW)));
+    }
     implicitHeight: Appearance.sizes.barHeight
+    Behavior on implicitWidth {
+        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+    }
+
+    component MediaBarButton: MouseArea {
+        id: controlBtn
+        required property string icon
+        property bool controlEnabled: true
+        implicitWidth: root.mediaControlSize
+        implicitHeight: root.mediaControlSize
+        hoverEnabled: true
+        cursorShape: controlEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        enabled: root.hasMedia && controlEnabled
+        opacity: enabled ? 1 : 0.35
+
+        MaterialSymbol {
+            anchors.centerIn: parent
+            fill: 1
+            text: controlBtn.icon
+            iconSize: Appearance.font.pixelSize.normal
+            color: controlBtn.containsMouse && controlBtn.enabled
+                ? Appearance.colors.colOnLayer1
+                : Appearance.m3colors.m3onSecondaryContainer
+            Behavior on color { ColorAnimation { duration: 120; easing.type: Easing.OutCubic } }
+        }
+    }
 
     Timer {
         running: root.isPlaying
@@ -134,7 +173,7 @@ Item {
             top: bgContainer.top
             bottom: bgContainer.bottom
             leftMargin: 10
-            rightMargin: 14
+            rightMargin: 8
         }
 
         // Progress ring with play/pause icon — exactly like original
@@ -171,7 +210,7 @@ Item {
 
             readonly property string displayText: {
                 if (!root.hasMedia) return "";
-                let artistStr = activePlayer?.trackArtist || "";
+                let artistStr = Config.options.bar.media.onlyTitle ? "" : (activePlayer?.trackArtist || "");
                 return `${cleanedTitle}${artistStr ? ' • ' + artistStr : ''}`;
             }
 
@@ -215,6 +254,42 @@ Item {
                         duration: Math.max(3000, topBarMusicText.implicitWidth * 25)
                         easing.type: Easing.Linear
                     }
+                }
+            }
+        }
+
+        Item {
+            id: mediaControls
+            visible: root.hasMedia
+            implicitWidth: controlsRow.implicitWidth
+            implicitHeight: root.mediaControlSize
+            Layout.alignment: Qt.AlignVCenter
+            Layout.leftMargin: 2
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.AllButtons
+                onPressed: mouse => { mouse.accepted = true }
+            }
+
+            Row {
+                id: controlsRow
+                anchors.centerIn: parent
+                spacing: 0
+
+                MediaBarButton {
+                    icon: "skip_previous"
+                    controlEnabled: activePlayer?.canGoPrevious ?? false
+                    onClicked: if (activePlayer) activePlayer.previous()
+                }
+                MediaBarButton {
+                    icon: root.isPlaying ? "pause" : "play_arrow"
+                    onClicked: if (activePlayer) activePlayer.togglePlaying()
+                }
+                MediaBarButton {
+                    icon: "skip_next"
+                    controlEnabled: activePlayer?.canGoNext ?? false
+                    onClicked: if (activePlayer) activePlayer.next()
                 }
             }
         }
