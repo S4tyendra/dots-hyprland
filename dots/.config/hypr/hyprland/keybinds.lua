@@ -9,6 +9,18 @@ local hyprScripts = "$HOME/.config/hypr/hyprland/scripts"
 local qsIpcCall = "qs -c $qsConfig ipc call"
 local qsIsAlive = qsIpcCall .. " TEST_ALIVE"
 
+-- Cancel the "Super released on its own" search toggle as soon as any other key is pressed.
+-- Otherwise e.g. Super+V opens the clipboard, then releasing Super toggles the overview closed.
+local superKeycodes = { [133] = true, [134] = true } -- Super_L, Super_R (xkb keycodes)
+hl.on("input.keyboard.key", function(keycode, _, state)
+    if state ~= 1 or superKeycodes[keycode] then
+        return
+    end
+    if hl.is_key_down(133) or hl.is_key_down(134) then
+        hl.dispatch(hl.dsp.global("quickshell:searchToggleReleaseInterrupt"))
+    end
+end)
+
 hl.bind("SUPER + SUPER_L", hl.dsp.global("quickshell:searchToggleRelease"), { description = "Shell: Toggle search" })
 hl.bind("SUPER + SUPER_R", hl.dsp.global("quickshell:searchToggleRelease"))
 hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(qsIsAlive .. " || pkill fuzzel || fuzzel"))
