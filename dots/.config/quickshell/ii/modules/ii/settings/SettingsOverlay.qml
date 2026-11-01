@@ -31,11 +31,110 @@ Scope {
         { name: Translation.tr("About"),      icon: "info",           component: Qt.resolvedUrl("../../settings/About.qml") }
     ]
     property int currentPage: 0
+    // Bit mask of pages that were opened and should stay loaded
+    property int visitedMask: 0
+    // True while every page is loaded temporarily to build the search index
+    property bool indexing: false
+    property string pendingSection: ""
 
     function resetState() {
         currentPage = 0
         showingProfile = false
+        pendingSection = ""
+        clearSearch()
     }
+
+    function updateSearch(text) {
+        SettingsSearch.query = text
+        indexing = text.trim() !== ""
+    }
+
+    function clearSearch() {
+        settingsSearchField.text = ""
+        SettingsSearch.query = ""
+        indexing = false
+        pendingSection = ""
+    }
+
+    function navigateToSearchResult(result) {
+        visitedMask = visitedMask | (1 << result.pageIndex)
+        currentPage = result.pageIndex
+        showingProfile = false
+        clearSearch()
+        pendingSection = result.section
+        scrollAttempts = 0
+        scrollTimer.restart()
+    }
+
+    // Focus the search field once the panel is actually visible
+    function focusSearch() {
+        searchFocusAttempts = 0
+        searchFocusTimer.restart()
+    }
+
+    property int searchFocusAttempts: 0
+
+    Timer {
+        id: searchFocusTimer
+        interval: 80
+        repeat: true
+        onTriggered: {
+            searchFocusAttempts++
+            if (panelWindow.visible && searchFocusAttempts > 1) {
+                stop()
+                settingsSearchField.forceActiveFocus()
+            } else if (searchFocusAttempts > 20) {
+                stop()
+            }
+        }
+    }
+
+    function scrollToPendingSection() {
+        if (pendingSection === "")
+            return
+        const loader = pagesRepeater.itemAt(currentPage)
+        if (!loader || !loader.item)
+            return
+        const section = findSectionByTitle(loader.item, pendingSection)
+        if (!section)
+            return
+        pendingSection = ""
+        loader.item.contentY = Math.max(0, section.y - 12)
+    }
+
+    function findSectionByTitle(item, title) {
+        if (!item)
+            return null
+        if (item.title === title && item.children !== undefined)
+            return item
+        const children = item.children
+        if (!children)
+            return null
+        for (let i = 0; i < children.length; i++) {
+            const found = findSectionByTitle(children[i], title)
+            if (found)
+                return found
+        }
+        return null
+    }
+
+    property int scrollAttempts: 0
+
+    Timer {
+        id: scrollTimer
+        interval: 120
+        repeat: true
+        onTriggered: {
+            root.scrollAttempts++
+            root.scrollToPendingSection()
+            if (root.pendingSection === "" || root.scrollAttempts > 20) {
+                stop()
+                root.scrollAttempts = 0
+            }
+        }
+    }
+
+    onCurrentPageChanged: visitedMask = visitedMask | (1 << currentPage)
 
     Connections {
         target: GlobalStates
@@ -72,6 +171,8 @@ Scope {
             if (visible) {
                 GlobalFocusGrab.addDismissable(panelWindow)
                 settingsWindow.userMoved = false
+                // Take focus so Esc / Ctrl+F work without clicking first
+                Qt.callLater(() => settingsWindow.forceActiveFocus())
             } else {
                 GlobalFocusGrab.removeDismissable(panelWindow)
             }
@@ -117,6 +218,7 @@ Scope {
             }
 
             property bool userMoved: false
+            focus: true
             anchors.centerIn: userMoved ? undefined : parent
 
             opacity: GlobalStates.settingsOpen ? 1 : 0
@@ -132,6 +234,9 @@ Scope {
             Keys.onPressed: (event) => {
                 if (event.key === Qt.Key_Escape) {
                     panelWindow.hide()
+                } else if (event.key === Qt.Key_F && event.modifiers === Qt.ControlModifier) {
+                    settingsSearchField.forceActiveFocus()
+                    event.accepted = true
                 }
             }
 
@@ -162,6 +267,84 @@ Scope {
                             font.weight: Font.Medium
                             color: Appearance.colors.colOnLayer0
                             Layout.fillWidth: true
+                        }
+
+                        // Search across all settings pages
+                        Rectangle {
+                            Layout.preferredWidth: 340
+                            Layout.preferredHeight: 32
+                            radius: Appearance.rounding.full
+                            color: Appearance.colors.colLayer1
+                            border.width: settingsSearchField.activeFocus ? 1 : 0
+                            border.color: Appearance.colors.colPrimary
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 4
+                                spacing: 6
+
+                                MaterialSymbol {
+                                    text: "search"
+                                    iconSize: 18
+                                    color: Appearance.colors.colSubtext
+                                }
+
+                                TextField {
+                                    id: settingsSearchField
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    padding: 0
+                                    leftPadding: 0
+                                    rightPadding: 0
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    placeholderText: Translation.tr("Search settings (Ctrl+F)")
+                                    placeholderTextColor: Appearance.colors.colSubtext
+                                    color: Appearance.colors.colOnLayer1
+                                    selectionColor: Appearance.colors.colSecondaryContainer
+                                    selectedTextColor: Appearance.colors.colOnSecondaryContainer
+                                    font {
+                                        family: Appearance.font.family.main
+                                        pixelSize: Appearance.font.pixelSize.small
+                                    }
+                                    background: Item {}
+                                    onTextChanged: root.updateSearch(text)
+                                    Keys.onPressed: (event) => {
+                                        if (event.key === Qt.Key_Down) {
+                                            if (searchResultsList.count > 0) {
+                                                searchResultsList.currentIndex = 0
+                                                searchResultsList.forceActiveFocus()
+                                            }
+                                            event.accepted = true
+                                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                            if (searchResultsList.count > 0)
+                                                root.navigateToSearchResult(SettingsSearch.results[0])
+                                            event.accepted = true
+                                        } else if (event.key === Qt.Key_Escape) {
+                                            if (text !== "") {
+                                                root.clearSearch()
+                                            } else {
+                                                panelWindow.hide()
+                                            }
+                                            event.accepted = true
+                                        }
+                                    }
+                                }
+
+                                RippleButton {
+                                    visible: settingsSearchField.text !== ""
+                                    implicitWidth: 24
+                                    implicitHeight: 24
+                                    buttonRadius: Appearance.rounding.full
+                                    onClicked: root.clearSearch()
+                                    contentItem: MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: "close"
+                                        iconSize: 16
+                                        color: Appearance.colors.colSubtext
+                                    }
+                                }
+                            }
                         }
 
                         RippleButton {
@@ -386,7 +569,16 @@ Scope {
                                     required property var index
                                     source: modelData.component
 
-                                    active: Config.ready && (root.currentPage === index || item !== null)
+                                    // Pages are loaded on first visit, or temporarily while
+                                    // indexing for search. Unvisited pages are unloaded again
+                                    // once the search is cleared.
+                                    active: Config.ready && (root.currentPage === index || (root.visitedMask & (1 << index)) !== 0 || root.indexing)
+                                    asynchronous: true
+
+                                    onLoaded: {
+                                        if (item)
+                                            SettingsSearch.indexPage(index, modelData.name, modelData.icon, item)
+                                    }
 
                                     anchors.fill: parent
 
@@ -424,6 +616,112 @@ Scope {
                                     NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                                 }
                             }
+
+                            // Search results, shown above the page stack
+                            Rectangle {
+                                anchors.fill: parent
+                                z: 5
+                                visible: SettingsSearch.query.trim() !== ""
+                                radius: Appearance.rounding.normal
+                                color: Appearance.colors.colLayer0
+
+                                ColumnLayout {
+                                    anchors {
+                                        fill: parent
+                                        margins: 12
+                                    }
+                                    spacing: 6
+
+                                    StyledText {
+                                        Layout.leftMargin: 8
+                                        text: SettingsSearch.results.length === 0
+                                            ? Translation.tr("No settings found for \"%1\"").arg(SettingsSearch.query)
+                                            : Translation.tr("%1 settings found").arg(SettingsSearch.results.length)
+                                        font.pixelSize: Appearance.font.pixelSize.small
+                                        color: Appearance.colors.colSubtext
+                                    }
+
+                                    ListView {
+                                        id: searchResultsList
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        clip: true
+                                        spacing: 2
+                                        model: SettingsSearch.results
+                                        keyNavigationWraps: true
+
+                                        Keys.onPressed: (event) => {
+                                            if (event.key === Qt.Key_Escape) {
+                                                root.clearSearch()
+                                                settingsSearchField.forceActiveFocus()
+                                                event.accepted = true
+                                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                                if (currentItem)
+                                                    root.navigateToSearchResult(SettingsSearch.results[currentIndex])
+                                                event.accepted = true
+                                            }
+                                        }
+
+                                        delegate: RippleButton {
+                                            id: searchResultButton
+                                            required property var modelData
+                                            required property int index
+                                            width: searchResultsList.width
+                                            implicitHeight: 54
+                                            buttonRadius: Appearance.rounding.small
+                                            colBackground: CF.ColorUtils.transparentize(Appearance.colors.colLayer1Hover, 1)
+                                            colBackgroundHover: Appearance.colors.colLayer1Hover
+                                            onClicked: root.navigateToSearchResult(modelData)
+
+                                            contentItem: RowLayout {
+                                                anchors {
+                                                    fill: parent
+                                                    leftMargin: 10
+                                                    rightMargin: 10
+                                                }
+                                                spacing: 12
+
+                                                MaterialSymbol {
+                                                    text: searchResultButton.modelData.sectionIcon !== ""
+                                                        ? searchResultButton.modelData.sectionIcon
+                                                        : searchResultButton.modelData.pageIcon
+                                                    iconSize: 22
+                                                    color: Appearance.colors.colPrimary
+                                                }
+
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: -1
+
+                                                    StyledText {
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
+                                                        text: searchResultButton.modelData.label
+                                                        font.pixelSize: Appearance.font.pixelSize.normal
+                                                        color: Appearance.colors.colOnLayer1
+                                                    }
+
+                                                    StyledText {
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
+                                                        text: searchResultButton.modelData.section !== ""
+                                                            ? `${searchResultButton.modelData.pageName} · ${searchResultButton.modelData.section}`
+                                                            : searchResultButton.modelData.pageName
+                                                        font.pixelSize: Appearance.font.pixelSize.smaller
+                                                        color: Appearance.colors.colSubtext
+                                                    }
+                                                }
+
+                                                MaterialSymbol {
+                                                    text: "chevron_right"
+                                                    iconSize: 18
+                                                    color: Appearance.colors.colSubtext
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -443,11 +741,24 @@ Scope {
         function close(): void {
             GlobalStates.settingsOpen = false
         }
+        function search(): void {
+            GlobalStates.settingsOpen = true
+            root.focusSearch()
+        }
     }
 
     GlobalShortcut {
         name: "settingsToggle"
         description: "Toggles settings panel"
         onPressed: GlobalStates.settingsOpen = !GlobalStates.settingsOpen
+    }
+
+    GlobalShortcut {
+        name: "settingsSearch"
+        description: "Opens settings with search focused"
+        onPressed: {
+            GlobalStates.settingsOpen = true
+            root.focusSearch()
+        }
     }
 }
