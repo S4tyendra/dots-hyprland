@@ -18,6 +18,10 @@ QtObject {
         print("Not implemented");
     }
     property var actions: []
+    property bool pinned: false
+    property string pinnedImageFile: ""
+    property int pinnedWidth: 0
+    property int pinnedHeight: 0
     
     // Stuff needed for DesktopEntry 
     property string id: ""

@@ -174,18 +174,51 @@ Singleton {
         if (root.query.startsWith(Config.options.search.prefix.clipboard)) {
             // Clipboard
             const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.clipboard);
-            return Cliphist.fuzzyQuery(searchString).map((entry, index, array) => {
+            const pinnedResults = Cliphist.fuzzyQueryPinned(searchString).map(pin => {
+                return resultComp.createObject(null, {
+                    rawValue: "",
+                    name: pin.preview,
+                    verb: Translation.tr("Copy"),
+                    type: Translation.tr("Pinned"),
+                    pinned: true,
+                    pinnedImageFile: pin.isImage ? pin.file : "",
+                    pinnedWidth: pin.width ?? 0,
+                    pinnedHeight: pin.height ?? 0,
+                    execute: () => {
+                        Cliphist.copyPin(pin);
+                    },
+                    actions: [resultComp.createObject(null, {
+                            name: Translation.tr("Copy"),
+                            iconName: "content_copy",
+                            iconType: LauncherSearchResult.IconType.Material,
+                            execute: () => {
+                                Cliphist.copyPin(pin);
+                            }
+                        }), resultComp.createObject(null, {
+                            name: Translation.tr("Unpin"),
+                            iconName: "keep_off",
+                            iconType: LauncherSearchResult.IconType.Material,
+                            execute: () => {
+                                Cliphist.unpin(pin);
+                            }
+                        })]
+                });
+            }).filter(Boolean);
+
+            const historyResults = Cliphist.fuzzyQuery(searchString).map((entry, index, array) => {
                 const mightBlurImage = Cliphist.entryIsImage(entry) && root.clipboardWorkSafetyActive;
                 let shouldBlurImage = mightBlurImage;
                 if (mightBlurImage) {
                     shouldBlurImage = shouldBlurImage && (root.containsUnsafeLink(array[index - 1]) || root.containsUnsafeLink(array[index + 1]));
                 }
                 const type = `#${entry.match(/^\s*(\S+)/)?.[1] || ""}`;
+                const existingPin = Cliphist.pinForEntry(entry);
                 return resultComp.createObject(null, {
                     rawValue: entry,
                     name: StringUtils.cleanCliphistEntry(entry),
                     verb: "",
                     type: type,
+                    pinned: existingPin !== null,
                     execute: () => {
                         Cliphist.copy(entry);
                     },
@@ -195,6 +228,16 @@ Singleton {
                             iconType: LauncherSearchResult.IconType.Material,
                             execute: () => {
                                 Cliphist.copy(entry);
+                            }
+                        }), resultComp.createObject(null, {
+                            name: existingPin !== null ? Translation.tr("Unpin") : Translation.tr("Pin"),
+                            iconName: existingPin !== null ? "keep_off" : "keep",
+                            iconType: LauncherSearchResult.IconType.Material,
+                            execute: () => {
+                                if (existingPin !== null)
+                                    Cliphist.unpin(existingPin);
+                                else
+                                    Cliphist.pin(entry);
                             }
                         }), resultComp.createObject(null, {
                             name: Translation.tr("Delete"),
@@ -207,6 +250,8 @@ Singleton {
                     blurImage: shouldBlurImage
                 });
             }).filter(Boolean);
+
+            return pinnedResults.concat(historyResults);
         } else if (root.query.startsWith(Config.options.search.prefix.emojis)) {
             // Clipboard
             const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.emojis);

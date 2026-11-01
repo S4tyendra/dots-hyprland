@@ -34,6 +34,10 @@ RippleButton {
     property string materialSymbol: entry.iconType === LauncherSearchResult.IconType.Material ? entry?.iconName ?? "" : ""
     property string cliphistRawString: entry?.rawValue ?? ""
     property bool blurImage: entry?.blurImage ?? false
+    property bool pinned: entry?.pinned ?? false
+    property string pinnedImageFile: entry?.pinnedImageFile ?? ""
+    property int pinnedWidth: entry?.pinnedWidth ?? 0
+    property int pinnedHeight: entry?.pinnedHeight ?? 0
     
     visible: root.entryShown
     property int horizontalMargin: 10
@@ -217,6 +221,12 @@ RippleButton {
                         url: modelData
                     }
                 }
+                MaterialSymbol { // Pinned clipboard entry
+                    visible: root.pinned
+                    text: "keep"
+                    iconSize: 16
+                    color: root.selected ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colPrimary
+                }
                 StyledText { // Item name/content
                     Layout.fillWidth: true
                     id: nameText
@@ -230,10 +240,13 @@ RippleButton {
                 }
             }
             Loader { // Clipboard image preview
-                active: root.cliphistRawString && Cliphist.entryIsImage(root.cliphistRawString)
+                active: (root.cliphistRawString && Cliphist.entryIsImage(root.cliphistRawString)) || root.pinnedImageFile !== ""
                 sourceComponent: CliphistImage {
                     Layout.fillWidth: true
                     entry: root.cliphistRawString
+                    imageFile: root.pinnedImageFile
+                    knownWidth: root.pinnedWidth
+                    knownHeight: root.pinnedHeight
                     maxWidth: contentColumn.width
                     maxHeight: 140
                     blur: root.blurImage

@@ -41,6 +41,8 @@ Singleton {
     property string generatedWallpaperCategoryPath: FileUtils.trimFileProtocol(`${Directories.state}/user/generated/wallpaper/category.txt`)
     property string generatedBlurredWallpaperPath: FileUtils.trimFileProtocol(`${Directories.state}/user/generated/wallpaper/blurred.png`)
     property string cliphistDecode: FileUtils.trimFileProtocol(`/tmp/quickshell/media/cliphist`)
+    property string cliphistPinsDir: FileUtils.trimFileProtocol(`${Directories.state}/user/cliphist-pins`)
+    property string cliphistPinsIndex: FileUtils.trimFileProtocol(`${Directories.state}/user/cliphist-pins/index.json`)
     property string screenshotTemp: "/tmp/quickshell/media/screenshot"
     property string wallpaperSwitchScriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/colors/switchwall.sh`)
     property string defaultAiPrompts: Quickshell.shellPath("defaults/ai/prompts")
@@ -54,14 +56,11 @@ Singleton {
     property string userAvatarPathRicersAndWeirdSystems2: FileUtils.trimFileProtocol(`${Directories.home}.face.icon`)
     // Cleanup on init
     Component.onCompleted: {
-        Quickshell.execDetached(["mkdir", "-p", `${shellConfig}`])
-        Quickshell.execDetached(["mkdir", "-p", `${favicons}`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${coverArt}'; mkdir -p '${coverArt}'`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${booruPreviews}'; mkdir -p '${booruPreviews}'`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${latexOutput}'; mkdir -p '${latexOutput}'`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${cliphistDecode}'; mkdir -p '${cliphistDecode}'`])
-        Quickshell.execDetached(["mkdir", "-p", `${aiChats}`])
-        Quickshell.execDetached(["mkdir", "-p", `${userActions}`])
-        Quickshell.execDetached(["rm", "-rf", `${tempImages}`])
+        // One shell instead of a dozen process spawns at startup
+        const keepDirs = [shellConfig, favicons, aiChats, userActions, cliphistPinsDir]
+        const recreatedDirs = [coverArt, booruPreviews, latexOutput, cliphistDecode]
+        const create = keepDirs.concat(recreatedDirs).map(path => `'${path}'`).join(" ")
+        const remove = recreatedDirs.concat([tempImages]).map(path => `'${path}'`).join(" ")
+        Quickshell.execDetached(["bash", "-c", `rm -rf ${remove} && mkdir -p ${create} && { [ -f '${cliphistPinsIndex}' ] || printf '[]' > '${cliphistPinsIndex}'; }`])
     }
 }
