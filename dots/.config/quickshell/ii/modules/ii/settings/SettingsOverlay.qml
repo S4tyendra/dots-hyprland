@@ -23,9 +23,11 @@ Scope {
     property var pages: [
         { name: Translation.tr("Quick"),      icon: "instant_mix",    component: Qt.resolvedUrl("../../settings/QuickConfig.qml") },
         { name: Translation.tr("General"),    icon: "browse",         component: Qt.resolvedUrl("../../settings/GeneralConfig.qml") },
+        { name: Translation.tr("Battery"),    icon: "battery_android_full", component: Qt.resolvedUrl("../../settings/BatteryConfig.qml") },
         { name: Translation.tr("Bar"),        icon: "toast",          iconRotation: 180, component: Qt.resolvedUrl("../../settings/BarConfig.qml") },
         { name: Translation.tr("Background"), icon: "texture",        component: Qt.resolvedUrl("../../settings/BackgroundConfig.qml") },
         { name: Translation.tr("Interface"),  icon: "bottom_app_bar", component: Qt.resolvedUrl("../../settings/InterfaceConfig.qml") },
+        { name: Translation.tr("Keybinds"),   icon: "keyboard",       component: Qt.resolvedUrl("../../settings/KeybindsConfig.qml") },
         { name: Translation.tr("Services"),   icon: "settings",       component: Qt.resolvedUrl("../../settings/ServicesConfig.qml") },
         { name: Translation.tr("Advanced"),   icon: "construction",   component: Qt.resolvedUrl("../../settings/AdvancedConfig.qml") },
         { name: Translation.tr("About"),      icon: "info",           component: Qt.resolvedUrl("../../settings/About.qml") }
@@ -134,7 +136,16 @@ Scope {
         }
     }
 
-    onCurrentPageChanged: visitedMask = visitedMask | (1 << currentPage)
+    onCurrentPageChanged: {
+        visitedMask = visitedMask | (1 << currentPage)
+        // Keep the selected entry visible in the scrollable navigation rail
+        const itemHeight = 56
+        const top = currentPage * itemHeight
+        if (top < navScroll.contentY)
+            navScroll.contentY = top
+        else if (top + itemHeight > navScroll.contentY + navScroll.height)
+            navScroll.contentY = Math.min(top + itemHeight - navScroll.height, navScroll.contentHeight - navScroll.height)
+    }
 
     Connections {
         target: GlobalStates
@@ -523,31 +534,42 @@ Scope {
                                 }
                             }
 
-                            NavigationRailTabArray {
-                                currentIndex: root.currentPage
-                                expanded: navRail.expanded
-                                colToggled: root.showingProfile ? "transparent" : Appearance.colors.colSecondaryContainer
-                                Repeater {
-                                    model: root.pages
-                                    NavigationRailButton {
-                                        required property var index
-                                        required property var modelData
-                                        toggled: root.currentPage === index && !root.showingProfile
-                                        onPressed: {
-                                            root.currentPage = index
-                                            root.showingProfile = false
+                            Flickable {
+                                id: navScroll
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                contentHeight: navTabs.implicitHeight
+                                contentWidth: width
+                                clip: true
+                                boundsBehavior: Flickable.StopAtBounds
+                                flickableDirection: Flickable.VerticalFlick
+                                interactive: contentHeight > height
+
+                                NavigationRailTabArray {
+                                    id: navTabs
+                                    width: navScroll.width
+                                    height: implicitHeight
+                                    currentIndex: root.currentPage
+                                    expanded: navRail.expanded
+                                    colToggled: root.showingProfile ? "transparent" : Appearance.colors.colSecondaryContainer
+                                    Repeater {
+                                        model: root.pages
+                                        NavigationRailButton {
+                                            required property var index
+                                            required property var modelData
+                                            toggled: root.currentPage === index && !root.showingProfile
+                                            onPressed: {
+                                                root.currentPage = index
+                                                root.showingProfile = false
+                                            }
+                                            expanded: navRail.expanded
+                                            buttonIcon: modelData.icon
+                                            buttonIconRotation: modelData.iconRotation || 0
+                                            buttonText: modelData.name
+                                            showToggledHighlight: false
                                         }
-                                        expanded: navRail.expanded
-                                        buttonIcon: modelData.icon
-                                        buttonIconRotation: modelData.iconRotation || 0
-                                        buttonText: modelData.name
-                                        showToggledHighlight: false
                                     }
                                 }
-                            }
-
-                            Item {
-                                Layout.fillHeight: true
                             }
                         }
                     }

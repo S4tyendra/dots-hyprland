@@ -39,6 +39,60 @@ Singleton {
     function setPowerProfile(profile) {
         PowerProfiles.profile = profile
     }
+
+    // Charge limit (charge_control_end_threshold exposed by some laptops)
+    readonly property string nativePath: UPower.displayDevice?.nativePath ?? ""
+    readonly property string chargeLimitPath: nativePath !== "" ? `${nativePath}/charge_control_end_threshold` : ""
+    readonly property int chargeLimitMin: 50
+    readonly property int chargeLimitMax: 100
+    property bool chargeLimitSupported: false
+    property int chargeLimit: 100
+
+    function setChargeLimit(value) {
+        if (!root.chargeLimitSupported)
+            return
+        const clamped = Math.max(root.chargeLimitMin, Math.min(root.chargeLimitMax, Math.round(value)))
+        root.chargeLimit = clamped
+        writeChargeLimit.running = false
+        writeChargeLimit.command = ["sh", "-c", `printf '%s\\n' '${clamped}' > '${root.chargeLimitPath}'`]
+        writeChargeLimit.running = true
+    }
+
+    onChargeLimitPathChanged: {
+        root.chargeLimitSupported = false
+        if (root.chargeLimitPath !== "")
+            readChargeLimit.running = true
+    }
+
+    Component.onCompleted: {
+        if (root.chargeLimitPath !== "")
+            readChargeLimit.running = true
+    }
+
+    Process {
+        id: readChargeLimit
+        command: ["sh", "-c", `test -w '${root.chargeLimitPath}' && cat '${root.chargeLimitPath}'`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const value = parseInt(text.trim())
+                if (!isNaN(value)) {
+                    root.chargeLimit = value
+                    root.chargeLimitSupported = true
+                }
+            }
+        }
+        onExited: (code) => {
+            if (code !== 0)
+                root.chargeLimitSupported = false
+        }
+    }
+
+    Process {
+        id: writeChargeLimit
+        onExited: (code) => {
+            readChargeLimit.running = true
+        }
+    }
     property int chargeCycles: (function() {
         const devList = UPower.devices.values;
         for (let i = 0; i < devList.length; ++i) {

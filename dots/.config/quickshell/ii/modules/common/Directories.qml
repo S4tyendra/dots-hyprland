@@ -43,6 +43,7 @@ Singleton {
     property string cliphistDecode: FileUtils.trimFileProtocol(`/tmp/quickshell/media/cliphist`)
     property string cliphistPinsDir: FileUtils.trimFileProtocol(`${Directories.state}/user/cliphist-pins`)
     property string cliphistPinsIndex: FileUtils.trimFileProtocol(`${Directories.state}/user/cliphist-pins/index.json`)
+    property string batteryHistoryPath: FileUtils.trimFileProtocol(`${Directories.state}/user/battery-history.json`)
     property string screenshotTemp: "/tmp/quickshell/media/screenshot"
     property string wallpaperSwitchScriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/colors/switchwall.sh`)
     property string defaultAiPrompts: Quickshell.shellPath("defaults/ai/prompts")

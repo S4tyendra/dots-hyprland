@@ -194,5 +194,44 @@ StyledPopup {
                 }
             }
         }
+
+        // Charge limit, only on laptops that expose a writable threshold
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: 3
+            Layout.rightMargin: 3
+            spacing: 8
+            visible: Battery.chargeLimitSupported
+
+            MaterialSymbol {
+                text: "battery_charging_full"
+                iconSize: 18
+                color: Appearance.colors.colOnSurfaceVariant
+            }
+
+            StyledText {
+                text: Translation.tr("Charge limit")
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                color: Appearance.colors.colOnSurfaceVariant
+            }
+
+            StyledSlider {
+                Layout.fillWidth: true
+                from: Battery.chargeLimitMin
+                to: Battery.chargeLimitMax
+                stepSize: 5
+                value: Battery.chargeLimit
+                configuration: StyledSlider.Configuration.XS
+                usePercentTooltip: false
+                onMoved: Battery.setChargeLimit(value)
+            }
+
+            StyledText {
+                text: `${Battery.chargeLimit}%`
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                font.weight: Font.Medium
+                color: Appearance.colors.colOnSurfaceVariant
+            }
+        }
     }
 }
