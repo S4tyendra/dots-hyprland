@@ -3,9 +3,21 @@ import qs.modules.common.widgets
 import qs.services
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Services.UPower
 
 StyledPopup {
     id: root
+
+    readonly property var profileOptions: Battery.hasPerformanceProfile
+        ? [
+            { profile: PowerProfile.PowerSaver, icon: "energy_savings_leaf", name: Translation.tr("Saver") },
+            { profile: PowerProfile.Balanced, icon: "airwave", name: Translation.tr("Balanced") },
+            { profile: PowerProfile.Performance, icon: "local_fire_department", name: Translation.tr("Performance") }
+        ]
+        : [
+            { profile: PowerProfile.PowerSaver, icon: "energy_savings_leaf", name: Translation.tr("Saver") },
+            { profile: PowerProfile.Balanced, icon: "airwave", name: Translation.tr("Balanced") }
+        ]
 
     function formatTime(seconds) {
         var h = Math.floor(seconds / 3600)
@@ -106,6 +118,80 @@ StyledPopup {
                 sublabel: ""
                 showProgress: true
                 cardWidth: 150
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            visible: Battery.chargeCycles > 0 || Battery.energyCapacity > 0
+
+            ResourceCard {
+                label: Translation.tr("Cycles")
+                iconText: "cyclone"
+                iconShape: MaterialShape.Shape.Pentagon
+                value: Math.min(Battery.chargeCycles / 1000, 1)
+                percentText: Battery.chargeCycles > 0 ? `${Battery.chargeCycles}` : Translation.tr("N/A")
+                sublabel: Battery.model
+                showProgress: true
+                cardWidth: 150
+            }
+
+            ResourceCard {
+                label: Translation.tr("Capacity")
+                iconText: "battery_android_full"
+                iconShape: MaterialShape.Shape.Clover4Leaf
+                value: Battery.energyCapacity > 0 ? Math.min(Battery.energy / Battery.energyCapacity, 1) : 0
+                percentText: Battery.energyCapacity > 0 ? `${Battery.energyCapacity.toFixed(0)}Wh` : Translation.tr("N/A")
+                sublabel: Battery.energyCapacity > 0 ? `${Battery.energy.toFixed(1)} Wh ${Translation.tr("now")}` : ""
+                showProgress: false
+                cardWidth: 150
+            }
+        }
+
+        // Power profile selection
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 4
+            visible: Battery.available
+
+            Repeater {
+                model: root.profileOptions
+
+                RippleButton {
+                    id: profileButton
+                    required property var modelData
+                    Layout.fillWidth: true
+                    implicitHeight: 34
+                    buttonRadius: Appearance.rounding.small
+                    toggled: Battery.powerProfile === modelData.profile
+                    colBackground: Appearance.colors.colLayer1
+                    colBackgroundHover: Appearance.colors.colLayer1Hover
+                    colBackgroundToggled: Appearance.colors.colPrimaryContainer
+                    colBackgroundToggledHover: Appearance.colors.colPrimaryContainerHover
+                    onClicked: Battery.setPowerProfile(modelData.profile)
+
+                    contentItem: RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 4
+
+                        MaterialSymbol {
+                            text: modelData.icon
+                            iconSize: 16
+                            color: profileButton.toggled
+                                ? Appearance.colors.colOnPrimaryContainer
+                                : Appearance.colors.colOnLayer1
+                        }
+
+                        StyledText {
+                            text: modelData.name
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            color: profileButton.toggled
+                                ? Appearance.colors.colOnPrimaryContainer
+                                : Appearance.colors.colOnLayer1
+                        }
+                    }
+                }
             }
         }
     }

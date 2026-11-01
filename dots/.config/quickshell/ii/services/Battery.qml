@@ -30,6 +30,15 @@ Singleton {
     property real energyRate: UPower.displayDevice.changeRate
     property real timeToEmpty: UPower.displayDevice.timeToEmpty
     property real timeToFull: UPower.displayDevice.timeToFull
+    readonly property real energy: UPower.displayDevice?.energy ?? 0
+    readonly property real energyCapacity: UPower.displayDevice?.energyCapacity ?? 0
+    readonly property string model: UPower.displayDevice?.model ?? ""
+    readonly property int powerProfile: PowerProfiles.profile
+    readonly property bool hasPerformanceProfile: PowerProfiles.hasPerformanceProfile
+
+    function setPowerProfile(profile) {
+        PowerProfiles.profile = profile
+    }
     property int chargeCycles: (function() {
         const devList = UPower.devices.values;
         for (let i = 0; i < devList.length; ++i) {
