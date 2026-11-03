@@ -81,10 +81,13 @@ Singleton {
         return null
     }
 
+    property int pinCounter: 0
+
     function pin(entry) {
         if (!entry || root.isPinned(entry))
             return
-        const id = `${Date.now()}`
+        // Date.now() alone can collide for pins made in the same millisecond
+        const id = `${Date.now()}-${root.pinCounter++}`
         const dims = entryImageDimensions(entry)
         pinProc.begin(entry, {
             id: id,
@@ -102,7 +105,7 @@ Singleton {
             return
         root.pins = root.pins.filter(item => item.id !== pin.id)
         savePins()
-        Quickshell.execDetached(["bash", "-c", `rm -f '${StringUtils.shellSingleQuoteEscape(pin.file)}'`])
+        root.deletePinFile(pin)
     }
 
     function savePins() {
@@ -117,10 +120,26 @@ Singleton {
         Quickshell.execDetached(["bash", "-c", `cat '${StringUtils.shellSingleQuoteEscape(pin.file)}' | wl-copy`])
     }
 
-    function pastePin(pin) {
-        if (!pin)
+    function deletePinFile(pin) {
+        Quickshell.execDetached(["bash", "-c", `rm -f '${StringUtils.shellSingleQuoteEscape(pin.file)}'`])
+    }
+
+    function addPin(data) {
+        // The same entry can be queued twice before the first decode
+        // finishes (pin() checks the finished list); don't store it twice.
+        if (root.pins.some(pin => pin.source === data.source
+                || (!pin.isImage && !data.isImage && pin.preview === data.preview))) {
+            root.deletePinFile(data)
             return
-        Quickshell.execDetached(["bash", "-c", `cat '${StringUtils.shellSingleQuoteEscape(pin.file)}' | wl-copy; ${root.pressPasteCommand}`])
+        }
+        const combined = root.pins.concat([data])
+        // Pins past the cap are evicted from the index; delete their files
+        // too, otherwise the pins directory leaks one file per eviction.
+        const dropped = combined.slice(0, Math.max(0, combined.length - 100))
+        root.pins = combined.slice(-100)
+        for (let i = 0; i < dropped.length; i++)
+            root.deletePinFile(dropped[i])
+        root.savePins()
     }
 
     function fuzzyQueryPinned(search: string): var {
@@ -147,19 +166,47 @@ Singleton {
     Process {
         id: pinProc
         property var pinData: null
+        // Pins are decoded one at a time, in request order. A single shared
+        // process that is simply re-pointed at the newest request loses the
+        // earlier pin (its data is overwritten) and orphans its file.
+        property var queue: []
+        // Pins that finished decoding before the index file was loaded;
+        // merged into the list by the FileView handlers below so loading
+        // can't overwrite them.
+        property var earlyPins: []
         function begin(entry, data) {
-            pinProc.pinData = data
-            command = ["bash", "-c", `mkdir -p '${root.pinsDir}' && printf '%s' '${StringUtils.shellSingleQuoteEscape(entry)}' | ${root.cliphistBinary} decode > '${data.file}'`]
+            pinProc.queue = pinProc.queue.concat([{ entry: entry, data: data }])
+            pinProc.processNext()
+        }
+        function processNext() {
+            if (pinProc.running || pinProc.queue.length === 0)
+                return
+            const next = pinProc.queue[0]
+            pinProc.queue = pinProc.queue.slice(1)
+            pinProc.pinData = next.data
+            command = ["bash", "-c", `mkdir -p '${root.pinsDir}' && printf '%s' '${StringUtils.shellSingleQuoteEscape(next.entry)}' | ${root.cliphistBinary} decode > '${next.data.file}'`]
             running = true
         }
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 0 && pinProc.pinData) {
-                root.pins = root.pins.concat([pinProc.pinData]).slice(-100)
-                root.savePins()
+                if (root.pinsLoaded)
+                    root.addPin(pinProc.pinData)
+                else
+                    pinProc.earlyPins = pinProc.earlyPins.concat([pinProc.pinData])
             } else {
                 console.error("[Cliphist] Failed to pin entry with code", exitCode, "and status", exitStatus)
             }
             pinProc.pinData = null
+            pinProc.processNext()
+        }
+    }
+
+    function flushEarlyPins() {
+        const early = pinProc.earlyPins
+        pinProc.earlyPins = []
+        for (let i = 0; i < early.length; i++) {
+            if (!root.pins.some(pin => pin.id === early[i].id))
+                root.addPin(early[i])
         }
     }
 
@@ -175,12 +222,14 @@ Singleton {
                 root.pins = []
             }
             root.pinsLoaded = true
+            root.flushEarlyPins()
         }
         onLoadFailed: (error) => {
             if (error !== FileViewError.FileNotFound)
                 console.error("[Cliphist] Failed to load pinned entries:", error)
             root.pins = []
             root.pinsLoaded = true
+            root.flushEarlyPins()
         }
     }
 

@@ -40,9 +40,14 @@ Singleton {
         const charging = Battery.isCharging
         const last = samples.length > 0 ? samples[samples.length - 1] : null
         if (last) {
-            if (now - last.t < 60000 && last.pct === percent)
+            const sameState = last.pct === percent && last.charging === charging
+            // Anti-spam for identical samples. A state change (percentage or
+            // charger) is never dropped, even when forced recording happens
+            // less than a minute after the previous sample — the old check
+            // compared only the percentage and swallowed charger transitions.
+            if (sameState && now - last.t < 60000)
                 return
-            if (!force && last.pct === percent && last.charging === charging && now - last.t < sampleIntervalMs)
+            if (!force && sameState && now - last.t < sampleIntervalMs)
                 return
         }
         samples.push({

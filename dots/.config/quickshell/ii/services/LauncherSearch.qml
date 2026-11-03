@@ -205,7 +205,11 @@ Singleton {
                 });
             }).filter(Boolean);
 
-            const historyResults = Cliphist.fuzzyQuery(searchString).map((entry, index, array) => {
+            // Pinned entries already appear in the pinned block above;
+            // don't list the same content a second time from history.
+            const historyResults = Cliphist.fuzzyQuery(searchString)
+            .filter(entry => !Cliphist.isPinned(entry))
+            .map((entry, index, array) => {
                 const mightBlurImage = Cliphist.entryIsImage(entry) && root.clipboardWorkSafetyActive;
                 let shouldBlurImage = mightBlurImage;
                 if (mightBlurImage) {

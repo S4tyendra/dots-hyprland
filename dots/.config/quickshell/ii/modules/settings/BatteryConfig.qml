@@ -224,7 +224,7 @@ ContentPage {
                         // Time labels
                         ctx.fillStyle = Appearance.colors.colSubtext
                         ctx.textAlign = "left"
-                        ctx.fillText(page.rangeHours === 24 ? "24h" : (page.rangeHours === 24 * 7 ? "7d" : "30d"), padLeft, height - 8)
+                        ctx.fillText(Qt.formatDateTime(new Date(startTime), page.rangeHours === 24 ? "MMM d, hh:mm" : "MMM d"), padLeft, height - 8)
                         ctx.textAlign = "right"
                         ctx.fillText(Translation.tr("now"), width - padRight, height - 8)
                     }

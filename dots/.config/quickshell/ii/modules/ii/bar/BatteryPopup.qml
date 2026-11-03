@@ -216,6 +216,7 @@ StyledPopup {
             }
 
             StyledSlider {
+                id: chargeLimitSlider
                 Layout.fillWidth: true
                 from: Battery.chargeLimitMin
                 to: Battery.chargeLimitMax
@@ -223,15 +224,32 @@ StyledPopup {
                 value: Battery.chargeLimit
                 configuration: StyledSlider.Configuration.XS
                 usePercentTooltip: false
-                onMoved: Battery.setChargeLimit(value)
+                // Commit once when the drag ends. Writing on every move
+                // spawns a process per tick, and the read-back of each
+                // intermediate value fights the drag through this binding.
+                onPressedChanged: {
+                    if (!pressed)
+                        chargeLimitCommitTimer.restart()
+                }
             }
 
             StyledText {
-                text: `${Battery.chargeLimit}%`
+                text: `${Math.round(chargeLimitSlider.value)}%`
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 font.weight: Font.Medium
                 color: Appearance.colors.colOnSurfaceVariant
             }
+        }
+
+        // Fires shortly after the charge-limit drag ends, once the slider's
+        // smoothed value has settled on the final position. Kept inside the
+        // layout: StyledPopup's default property accepts a single Item, so
+        // a Timer cannot be a direct child of the popup root.
+        Timer {
+            id: chargeLimitCommitTimer
+            interval: 200
+            repeat: false
+            onTriggered: Battery.setChargeLimit(chargeLimitSlider.value)
         }
     }
 }

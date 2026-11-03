@@ -47,8 +47,20 @@ Scope {
     }
 
     function updateSearch(text) {
+        const wasIndexing = indexing
         SettingsSearch.query = text
         indexing = text.trim() !== ""
+        if (indexing && !wasIndexing) {
+            // Pages that stay loaded keep evolving (options toggled, lists
+            // edited) but only report their labels when first loaded.
+            // Re-index whatever is currently loaded so a new search session
+            // doesn't serve entries captured when the page was first opened.
+            for (let i = 0; i < pagesRepeater.count; i++) {
+                const loader = pagesRepeater.itemAt(i)
+                if (loader && loader.item)
+                    SettingsSearch.indexPage(i, pages[i].name, pages[i].icon, loader.item)
+            }
+        }
     }
 
     function clearSearch() {
@@ -101,7 +113,10 @@ Scope {
         if (!section)
             return
         pendingSection = ""
-        loader.item.contentY = Math.max(0, section.y - 12)
+        // section.y is relative to its parent column, not to the page's
+        // scrollable content; map it into content coordinates.
+        const targetY = section.mapToItem(loader.item.contentItem, 0, 0).y
+        loader.item.contentY = Math.max(0, targetY - 12)
     }
 
     function findSectionByTitle(item, title) {
@@ -139,8 +154,9 @@ Scope {
     onCurrentPageChanged: {
         visitedMask = visitedMask | (1 << currentPage)
         // Keep the selected entry visible in the scrollable navigation rail
+        // (25 is the tab array's top offset inside the Flickable)
         const itemHeight = 56
-        const top = currentPage * itemHeight
+        const top = 25 + currentPage * itemHeight
         if (top < navScroll.contentY)
             navScroll.contentY = top
         else if (top + itemHeight > navScroll.contentY + navScroll.height)
@@ -538,7 +554,7 @@ Scope {
                                 id: navScroll
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                contentHeight: navTabs.implicitHeight
+                                contentHeight: navTabs.implicitHeight + 25
                                 contentWidth: width
                                 clip: true
                                 boundsBehavior: Flickable.StopAtBounds
@@ -547,6 +563,9 @@ Scope {
 
                                 NavigationRailTabArray {
                                     id: navTabs
+                                    // The array's Layout.topMargin has no effect
+                                    // outside a Layout; offset it directly.
+                                    y: 25
                                     width: navScroll.width
                                     height: implicitHeight
                                     currentIndex: root.currentPage

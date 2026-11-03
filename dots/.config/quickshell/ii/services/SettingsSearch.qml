@@ -51,11 +51,6 @@ Singleton {
         return scored.slice(0, 60).map(item => item.entry)
     }
 
-    function clear() {
-        root.allEntries = []
-        root.query = ""
-    }
-
     /** Replace the index entries belonging to one settings page. */
     function indexPage(pageIndex, pageName, pageIcon, pageItem) {
         const collected = { seen: {}, entries: [] }
