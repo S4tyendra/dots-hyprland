@@ -35,8 +35,6 @@ Scope {
     property int currentPage: 0
     // Bit mask of pages that were opened and should stay loaded
     property int visitedMask: 0
-    // True while every page is loaded temporarily to build the search index
-    property bool indexing: false
     property string pendingSection: ""
 
     function resetState() {
@@ -47,26 +45,25 @@ Scope {
     }
 
     function updateSearch(text) {
-        const wasIndexing = indexing
+        const newSession = SettingsSearch.query.trim() === "" && text.trim() !== ""
         SettingsSearch.query = text
-        indexing = text.trim() !== ""
-        if (indexing && !wasIndexing) {
-            // Pages that stay loaded keep evolving (options toggled, lists
-            // edited) but only report their labels when first loaded.
-            // Re-index whatever is currently loaded so a new search session
-            // doesn't serve entries captured when the page was first opened.
-            for (let i = 0; i < pagesRepeater.count; i++) {
-                const loader = pagesRepeater.itemAt(i)
-                if (loader && loader.item)
-                    SettingsSearch.indexPage(i, pages[i].name, pages[i].icon, loader.item)
+        if (newSession) {
+            // The index is parsed from the pages' source files (see the
+            // FileViews below), so refreshing it is just re-reading a few
+            // text files — no page ever gets instantiated for search.
+            for (let i = 0; i < indexSources.count; i++) {
+                const view = indexSources.objectAt(i)
+                if (view)
+                    view.reload()
             }
+            keybindsMainView.reload()
+            keybindsCustomView.reload()
         }
     }
 
     function clearSearch() {
         settingsSearchField.text = ""
         SettingsSearch.query = ""
-        indexing = false
         pendingSection = ""
     }
 
@@ -610,16 +607,11 @@ Scope {
                                     required property var index
                                     source: modelData.component
 
-                                    // Pages are loaded on first visit, or temporarily while
-                                    // indexing for search. Unvisited pages are unloaded again
-                                    // once the search is cleared.
-                                    active: Config.ready && (root.currentPage === index || (root.visitedMask & (1 << index)) !== 0 || root.indexing)
+                                    // Pages are loaded on first visit and stay loaded
+                                    // afterwards. Search never loads a page: its index
+                                    // is parsed from the page sources (see below).
+                                    active: Config.ready && (root.currentPage === index || (root.visitedMask & (1 << index)) !== 0)
                                     asynchronous: true
-
-                                    onLoaded: {
-                                        if (item)
-                                            SettingsSearch.indexPage(index, modelData.name, modelData.icon, item)
-                                    }
 
                                     anchors.fill: parent
 
@@ -766,6 +758,52 @@ Scope {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Search index sources. Each page's QML file is read as text and
+    // parsed by SettingsSearch; the two Hyprland keybind files contribute
+    // their bind descriptions to the Keybinds page's entries.
+    Instantiator {
+        id: indexSources
+        model: root.pages
+        delegate: FileView {
+            required property var modelData
+            required property int index
+            path: root.pageFilePath(modelData.component)
+            onLoaded: SettingsSearch.indexPage(index, modelData.name, modelData.icon, text())
+        }
+    }
+
+    FileView {
+        id: keybindsMainView
+        path: CF.FileUtils.trimFileProtocol(Directories.config + "/hypr/hyprland/keybinds.lua")
+        onLoaded: root.refreshKeybindIndex()
+    }
+
+    FileView {
+        id: keybindsCustomView
+        path: CF.FileUtils.trimFileProtocol(Directories.config + "/hypr/custom/keybinds.lua")
+        onLoaded: root.refreshKeybindIndex()
+    }
+
+    // Page components are `qs:`-scheme URLs, which FileView cannot read;
+    // translate them back to real filesystem paths via Quickshell.shellPath.
+    function pageFilePath(component) {
+        const url = component.toString()
+        const prefix = "qs:@/qs/"
+        if (url.startsWith(prefix))
+            return CF.FileUtils.trimFileProtocol(Quickshell.shellPath(url.slice(prefix.length)))
+        return CF.FileUtils.trimFileProtocol(url)
+    }
+
+    function refreshKeybindIndex() {
+        for (let i = 0; i < pages.length; i++) {
+            if (pages[i].component.toString().endsWith("KeybindsConfig.qml")) {
+                SettingsSearch.indexKeybinds(i, pages[i].name, pages[i].icon,
+                    [keybindsMainView.text(), keybindsCustomView.text()])
+                return
             }
         }
     }
