@@ -12,6 +12,10 @@
   and configure low and critical UPower notifications. Peripheral percentages also
   appear in System icons, the vertical bar, and the battery popup. The Bluetooth
   device list already shows percentages for devices that report them.
+- **Settings → Keybinds:** search shortcuts by name or keys. Edit them in the
+  page, type a shortcut or record it, and use **+ Add** to bind a named command.
+  Saves use `custom/keybinds.lua`; shipped shortcuts become overrides, keeping
+  their paired actions and options. Generated shortcuts remain read-only.
 - **Settings → Widgets:** enable desktop widgets, choose a display, and change
   their size. Unlock positions to drag them. Detailed styles remain in Background.
 - **Settings → Appearance:** choose installed GTK, Qt, icon, cursor, application

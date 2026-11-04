@@ -16,6 +16,7 @@ ShellRoot {
     property int step: 0
     property int attempts: 0
     property int phase: 0
+    property int keybindStage: 0
     property var compactPage: null
     property var displayedPage: null
     property bool capturing: false
@@ -147,7 +148,10 @@ ShellRoot {
                     DisplayConfig.monitors = [{name: "eDP-1", mode: "1920x1080@60", x: 0, y: 0, scale: 1, transform: 0, modes: ["1920x1080@60", "1920x1080@40"]}];
                     DisplayConfig.error = "";
                 }
-                if (root.phase === 0) { root.phase = 1; return; }
+                if (root.phase === 0) {
+                    if (index === 10) page.startEdit(page.entries[0]);
+                    root.phase = 1; return;
+                }
                 const label = index < 0 ? "Profile" : settings.pages[index].name;
                 if (root.phase === 1) {
                     root.check(page.enabled && page.parent.enabled && page.parent.opacity === 1, "selected settings page is disabled or dim: " + label);
@@ -166,6 +170,7 @@ ShellRoot {
                     root.check(component.status === Component.Ready, "compact page failed to compile: " + label + " " + component.errorString());
                     root.compactPage = component.createObject(page.parent, {width: 360, height: page.height, z: 20});
                     root.check(!!root.compactPage, "compact page failed to instantiate: " + label);
+                    if (index === 10) root.compactPage.startEdit(null);
                     page.visible = false;
                     root.phase = 3;
                     return;
@@ -183,6 +188,47 @@ ShellRoot {
                 root.capture(root.compactPage, label + "-compact", () => root.advance());
                 return;
             }
+            const binds = settings.pageItem(10);
+            if (root.keybindStage === 0) {
+                root.check(binds.entries.every(entry => !!entry.description), "shortcut name missing");
+                root.check(binds.inferredName('hl.bind("X", hl.dsp.exec_cmd("nemo"))').includes("nemo"), "command name not inferred");
+                binds.startEdit(binds.entries.find(entry => entry.combo === "SUPER + T"));
+                binds.capturedCombo = "SUPER + Y";
+                binds.applyRebind();
+                root.keybindStage = 1;
+                return;
+            }
+            if (binds.saving) return;
+            if (root.keybindStage === 1) {
+                root.check(!binds.editorOpen, "rebind did not save: " + binds.captureError);
+                root.check(binds.entries.filter(entry => entry.combo === "SUPER + Y").length === 2, "rebind lost paired action");
+                root.check(!binds.entries.some(entry => entry.combo === "SUPER + T"), "overridden shortcut still listed");
+                const entry = binds.entries.find(entry => entry.combo === "SUPER + Y");
+                if (entry) {
+                    binds.startEdit(entry);
+                    binds.capturedCombo = "SUPER + U";
+                    binds.applyRebind();
+                }
+                root.keybindStage = 2;
+                return;
+            }
+            if (root.keybindStage === 2) {
+                root.check(!binds.editorOpen, "custom shortcut edit failed");
+                root.check(binds.entries.some(entry => entry.combo === "SUPER + U"), "custom rebind missing");
+                binds.startEdit(null);
+                root.findObject(binds, "keybindName").value = 'Launch "test"';
+                root.findObject(binds, "keybindCommand").value = 'printf "hello"';
+                binds.capturedCombo = "SUPER + I";
+                binds.applyRebind();
+                root.keybindStage = 3;
+                return;
+            }
+            root.check(!binds.editorOpen, "new shortcut did not save: " + binds.captureError);
+            root.check(binds.entries.some(entry => entry.combo === "SUPER + I" && entry.description === 'Launch "test"'), "new shortcut name missing or escaped incorrectly");
+            binds.startEdit(null);
+            root.check(binds.comboError("SUPER + I") !== "", "duplicate shortcut accepted");
+            root.check(binds.comboError('SUPER + T"') !== "", "unsafe shortcut accepted");
+            binds.closeDialog();
             stop();
 
             const monitor = {id: 0, width: 1920, height: 1080, scale: 1, dpmsStatus: true, activeWorkspace: {id: 1}};

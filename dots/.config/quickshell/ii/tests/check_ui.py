@@ -21,6 +21,13 @@ with tempfile.TemporaryDirectory(prefix="ii-ui-check-", dir="/tmp") as directory
         "background": {"wallpaperPath": "", "widgets": {"clock": {"style": "digital", "styleLocked": "cookie"}, "visualizer": {"enable": True, "mode": "wave"}}},
         "hyprland": {"autostartApps": {"apps": [{"cmd": "firefox", "workspace": 2, "delay": 5}]}},
     }))
+    for relative, text in {
+        "hypr/hyprland/keybinds.lua": 'hl.bind("SUPER + T", hl.dsp.exec_cmd("kitty"), {description = "Apps: Terminal"})\nhl.bind("SUPER + T", hl.dsp.global("quickshell:test"))\n',
+        "hypr/custom/keybinds.lua": 'hl.bind("SUPER + E", hl.dsp.exec_cmd("nemo"))\n',
+    }.items():
+        target = root / "config" / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text)
     (root / "screenshots").mkdir()
     matugen = root / "config/matugen/config.toml"
     matugen.parent.mkdir()
