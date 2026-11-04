@@ -140,6 +140,8 @@ hl.layer_rule({ match = { namespace = "osk[0-9]*" }, ignore_alpha = 0.6})
 hl.layer_rule({ match = { namespace = "quickshell:.*" }, blur_popups = true})
 hl.layer_rule({ match = { namespace = "quickshell:.*" }, blur = true})
 hl.layer_rule({ match = { namespace = "quickshell:.*" }, ignore_alpha = 0.5})
+-- Keep translucent launcher surfaces blurred over windows, including below 50% opacity.
+hl.layer_rule({ match = { namespace = "^quickshell:overview$" }, blur = true, ignore_alpha = 0.01, xray = false})
 -- PERF: background is the bottom-most full-screen layer on every monitor.
 -- Blurring it is pointless (nothing below it) but costs 2 full-screen blur passes
 -- per monitor per frame. Explicitly cancel the wildcard blur above.
