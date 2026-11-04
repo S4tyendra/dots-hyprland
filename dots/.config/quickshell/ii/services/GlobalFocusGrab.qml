@@ -53,11 +53,14 @@ Singleton {
     }
 
     function hasActive(element) {
-        return element?.activeFocus || Array.from(
-            element?.children
-        ).some(
-            (child) => hasActive(child)
-        );
+        if (!element)
+            return false;
+        if (element.activeFocus)
+            return true;
+        const kids = element.children;
+        if (!kids || kids.length === 0)
+            return false;
+        return Array.from(kids).some(child => hasActive(child));
     }
 
     HyprlandFocusGrab {

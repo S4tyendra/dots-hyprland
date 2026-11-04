@@ -2,6 +2,7 @@ pragma Singleton
 
 import qs.modules.common
 import qs.modules.common.functions
+import QtQuick
 import Quickshell
 
 /**
@@ -40,23 +41,46 @@ Singleton {
         }
     ]
 
-    // Deduped list to fix double icons
-    readonly property list<DesktopEntry> list: Array.from(DesktopEntries.applications.values)
-        .filter((app, index, self) => 
-            index === self.findIndex((t) => (
-                t.id === app.id
-            ))
-    )
-    
-    readonly property var preppedNames: list.map(a => ({
-        name: Fuzzy.prepare(`${a.name} `),
-        entry: a
-    }))
+    // A desktop-entry rescan removes/inserts entries one at a time. Binding
+    // directly to applications.values rebuilds this list and the fuzzy index
+    // hundreds of times, forcing long GC pauses across the entire shell.
+    // applicationsChanged is emitted after the complete scan has been applied.
+    property list<DesktopEntry> list: []
+    property var preppedNames: []
+    property var preppedIcons: []
 
-    readonly property var preppedIcons: list.map(a => ({
-        name: Fuzzy.prepare(`${a.icon} `),
-        entry: a
-    }))
+    function rebuildIndex() {
+        const seen = new Set();
+        const apps = [];
+        const names = [];
+        const icons = [];
+        for (const app of DesktopEntries.applications.values) {
+            if (!app || seen.has(app.id))
+                continue;
+            seen.add(app.id);
+            apps.push(app);
+            names.push({name: Fuzzy.prepare(`${app.name} `), entry: app});
+            icons.push({name: Fuzzy.prepare(`${app.icon} `), entry: app});
+        }
+        root.list = apps;
+        root.preppedNames = names;
+        root.preppedIcons = icons;
+    }
+
+    Component.onCompleted: root.rebuildIndex()
+
+    Connections {
+        target: DesktopEntries
+        function onApplicationsChanged() {
+            rebuildTimer.restart();
+        }
+    }
+
+    Timer {
+        id: rebuildTimer
+        interval: 0
+        onTriggered: root.rebuildIndex()
+    }
 
     function fuzzyQuery(search: string): var { // Idk why list<DesktopEntry> doesn't work
         if (root.sloppySearch) {

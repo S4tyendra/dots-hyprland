@@ -9,22 +9,12 @@ local hyprScripts = "$HOME/.config/hypr/hyprland/scripts"
 local qsIpcCall = "qs -c $qsConfig ipc call"
 local qsIsAlive = qsIpcCall .. " TEST_ALIVE"
 
--- Cancel the "Super released on its own" search toggle as soon as any other key is pressed.
--- Otherwise e.g. Super+V opens the clipboard, then releasing Super toggles the overview closed.
-local superKeycodes = { [133] = true, [134] = true } -- Super_L, Super_R (xkb keycodes)
-hl.on("input.keyboard.key", function(keycode, _, state)
-    if state ~= 1 or superKeycodes[keycode] then
-        return
-    end
-    if hl.is_key_down(133) or hl.is_key_down(134) then
-        hl.dispatch(hl.dsp.global("quickshell:searchToggleReleaseInterrupt"))
-    end
-end)
-
-hl.bind("SUPER + SUPER_L", hl.dsp.global("quickshell:searchToggleRelease"), { description = "Shell: Toggle search" })
-hl.bind("SUPER + SUPER_R", hl.dsp.global("quickshell:searchToggleRelease"))
-hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(qsIsAlive .. " || pkill fuzzel || fuzzel"))
-hl.bind("SUPER + SUPER_R", hl.dsp.exec_cmd(qsIsAlive .. " || pkill fuzzel || fuzzel"))
+-- Toggle only when Super is released on its own. Keep these shadowable so
+-- another shortcut (including Super+scroll) cancels the pending search toggle.
+-- IPC avoids sending a global-shortcut release to an onPressed handler.
+local toggleSearch = hl.dsp.exec_cmd(qsIpcCall .. " search toggle || pkill fuzzel || fuzzel")
+hl.bind("SUPER + SUPER_L", toggleSearch, { release = true, description = "Shell: Toggle search" })
+hl.bind("SUPER + SUPER_R", toggleSearch, { release = true })
 
 hl.bind("SUPER_L", hl.dsp.global("quickshell:workspaceNumber"), { ignore_mods = true, transparent = true })
 hl.bind("SUPER_R", hl.dsp.global("quickshell:workspaceNumber"), { ignore_mods = true, transparent = true })

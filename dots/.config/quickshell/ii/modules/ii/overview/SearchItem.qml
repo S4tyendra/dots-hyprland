@@ -107,10 +107,13 @@ RippleButton {
         anchors.rightMargin: root.horizontalMargin
     }
 
-    onClicked: {
+    function activate(execute) {
         GlobalStates.overviewOpen = false
-        root.itemExecute()
+        GlobalFocusGrab.dismiss()
+        // Release the overview's exclusive keyboard before the new app maps.
+        Qt.callLater(execute)
     }
+    onClicked: root.activate(root.itemExecute)
     Keys.onPressed: (event) => {
         if (event.key === Qt.Key_Delete && event.modifiers === Qt.ShiftModifier) {
             const deleteAction = root.entry.actions.find(action => action.name == Translation.tr("Delete"));
@@ -305,7 +308,12 @@ RippleButton {
                         }
                     }
 
-                    onClicked: modelData.execute()
+                    onClicked: {
+                        if (root.entry.id)
+                            root.activate(modelData.execute)
+                        else
+                            modelData.execute()
+                    }
 
                     StyledToolTip {
                         text: modelData.name
