@@ -21,66 +21,135 @@ Scope {
     property real contentPadding: 8
     property bool showingProfile: false
     property var pages: [
-        { name: Translation.tr("Quick"),      icon: "instant_mix",    component: Qt.resolvedUrl("../../settings/QuickConfig.qml") },
-        { name: Translation.tr("General"),    icon: "browse",         component: Qt.resolvedUrl("../../settings/GeneralConfig.qml") },
-        { name: Translation.tr("Battery"),    icon: "battery_android_full", component: Qt.resolvedUrl("../../settings/BatteryConfig.qml") },
-        { name: Translation.tr("Bar"),        icon: "toast",          iconRotation: 180, component: Qt.resolvedUrl("../../settings/BarConfig.qml") },
-        { name: Translation.tr("Background"), icon: "texture",        component: Qt.resolvedUrl("../../settings/BackgroundConfig.qml") },
-        { name: Translation.tr("Interface"),  icon: "bottom_app_bar", component: Qt.resolvedUrl("../../settings/InterfaceConfig.qml") },
-        { name: Translation.tr("Keybinds"),   icon: "keyboard",       component: Qt.resolvedUrl("../../settings/KeybindsConfig.qml") },
-        { name: Translation.tr("Services"),   icon: "settings",       component: Qt.resolvedUrl("../../settings/ServicesConfig.qml") },
-        { name: Translation.tr("Advanced"),   icon: "construction",   component: Qt.resolvedUrl("../../settings/AdvancedConfig.qml") },
-        { name: Translation.tr("About"),      icon: "info",           component: Qt.resolvedUrl("../../settings/About.qml") }
+        {
+            name: Translation.tr("Quick"),
+            icon: "instant_mix",
+            component: Qt.resolvedUrl("../../settings/QuickConfig.qml")
+        },
+        {
+            name: Translation.tr("General"),
+            icon: "browse",
+            component: Qt.resolvedUrl("../../settings/GeneralConfig.qml")
+        },
+        {
+            name: Translation.tr("Displays"),
+            icon: "desktop_windows",
+            component: Qt.resolvedUrl("../../settings/DisplaysConfig.qml")
+        },
+        {
+            name: Translation.tr("Startup"),
+            icon: "rocket_launch",
+            component: Qt.resolvedUrl("../../settings/StartupConfig.qml")
+        },
+        {
+            name: Translation.tr("Widgets"),
+            icon: "widgets",
+            component: Qt.resolvedUrl("../../settings/WidgetsConfig.qml")
+        },
+        {
+            name: Translation.tr("Appearance"),
+            icon: "palette",
+            component: Qt.resolvedUrl("../../settings/AppearanceConfig.qml")
+        },
+        {
+            name: Translation.tr("Battery"),
+            icon: "battery_android_full",
+            component: Qt.resolvedUrl("../../settings/BatteryConfig.qml")
+        },
+        {
+            name: Translation.tr("Bar"),
+            icon: "toast",
+            iconRotation: 180,
+            component: Qt.resolvedUrl("../../settings/BarConfig.qml")
+        },
+        {
+            name: Translation.tr("Background"),
+            icon: "texture",
+            component: Qt.resolvedUrl("../../settings/BackgroundConfig.qml")
+        },
+        {
+            name: Translation.tr("Interface"),
+            icon: "bottom_app_bar",
+            component: Qt.resolvedUrl("../../settings/InterfaceConfig.qml")
+        },
+        {
+            name: Translation.tr("Keybinds"),
+            icon: "keyboard",
+            component: Qt.resolvedUrl("../../settings/KeybindsConfig.qml")
+        },
+        {
+            name: Translation.tr("Services"),
+            icon: "settings",
+            component: Qt.resolvedUrl("../../settings/ServicesConfig.qml")
+        },
+        {
+            name: Translation.tr("Advanced"),
+            icon: "construction",
+            component: Qt.resolvedUrl("../../settings/AdvancedConfig.qml")
+        },
+        {
+            name: Translation.tr("About"),
+            icon: "info",
+            component: Qt.resolvedUrl("../../settings/About.qml")
+        }
     ]
     property int currentPage: 0
     // Bit mask of pages that were opened and should stay loaded
     property int visitedMask: 0
     property string pendingSection: ""
 
+    Connections {
+        target: SettingsSearch
+        function onNavigationRequested(entry) {
+            GlobalStates.settingsOpen = true;
+            root.navigateToSearchResult(entry);
+        }
+    }
+
     function resetState() {
-        currentPage = 0
-        showingProfile = false
-        pendingSection = ""
-        clearSearch()
+        currentPage = 0;
+        showingProfile = false;
+        pendingSection = "";
+        clearSearch();
     }
 
     function updateSearch(text) {
-        const newSession = SettingsSearch.query.trim() === "" && text.trim() !== ""
-        SettingsSearch.query = text
+        const newSession = SettingsSearch.query.trim() === "" && text.trim() !== "";
+        SettingsSearch.query = text;
         if (newSession) {
             // The index is parsed from the pages' source files (see the
             // FileViews below), so refreshing it is just re-reading a few
             // text files — no page ever gets instantiated for search.
             for (let i = 0; i < indexSources.count; i++) {
-                const view = indexSources.objectAt(i)
+                const view = indexSources.objectAt(i);
                 if (view)
-                    view.reload()
+                    view.reload();
             }
-            keybindsMainView.reload()
-            keybindsCustomView.reload()
+            keybindsMainView.reload();
+            keybindsCustomView.reload();
         }
     }
 
     function clearSearch() {
-        settingsSearchField.text = ""
-        SettingsSearch.query = ""
-        pendingSection = ""
+        settingsSearchField.text = "";
+        SettingsSearch.query = "";
+        pendingSection = "";
     }
 
     function navigateToSearchResult(result) {
-        visitedMask = visitedMask | (1 << result.pageIndex)
-        currentPage = result.pageIndex
-        showingProfile = false
-        clearSearch()
-        pendingSection = result.section
-        scrollAttempts = 0
-        scrollTimer.restart()
+        visitedMask = visitedMask | (1 << result.pageIndex);
+        currentPage = result.pageIndex;
+        showingProfile = false;
+        clearSearch();
+        pendingSection = result.section;
+        scrollAttempts = 0;
+        scrollTimer.restart();
     }
 
     // Focus the search field once the panel is actually visible
     function focusSearch() {
-        searchFocusAttempts = 0
-        searchFocusTimer.restart()
+        searchFocusAttempts = 0;
+        searchFocusTimer.restart();
     }
 
     property int searchFocusAttempts: 0
@@ -90,46 +159,50 @@ Scope {
         interval: 80
         repeat: true
         onTriggered: {
-            searchFocusAttempts++
+            searchFocusAttempts++;
             if (panelWindow.visible && searchFocusAttempts > 1) {
-                stop()
-                settingsSearchField.forceActiveFocus()
+                stop();
+                settingsSearchField.forceActiveFocus();
             } else if (searchFocusAttempts > 20) {
-                stop()
+                stop();
             }
         }
     }
 
     function scrollToPendingSection() {
         if (pendingSection === "")
-            return
-        const loader = pagesRepeater.itemAt(currentPage)
-        if (!loader || !loader.item)
-            return
-        const section = findSectionByTitle(loader.item, pendingSection)
+            return;
+        const page = pageItem(currentPage);
+        if (!page)
+            return;
+        const section = findSectionByTitle(page, pendingSection);
         if (!section)
-            return
-        pendingSection = ""
+            return;
+        pendingSection = "";
         // section.y is relative to its parent column, not to the page's
         // scrollable content; map it into content coordinates.
-        const targetY = section.mapToItem(loader.item.contentItem, 0, 0).y
-        loader.item.contentY = Math.max(0, targetY - 12)
+        const targetY = section.mapToItem(page.contentItem, 0, 0).y;
+        page.contentY = Math.max(0, targetY - 12);
+    }
+
+    function pageItem(index) {
+        return index < 0 ? profileLoader.item : (pagesRepeater.itemAt(index)?.item ?? null);
     }
 
     function findSectionByTitle(item, title) {
         if (!item)
-            return null
+            return null;
         if (item.title === title && item.children !== undefined)
-            return item
-        const children = item.children
+            return item;
+        const children = item.children;
         if (!children)
-            return null
+            return null;
         for (let i = 0; i < children.length; i++) {
-            const found = findSectionByTitle(children[i], title)
+            const found = findSectionByTitle(children[i], title);
             if (found)
-                return found
+                return found;
         }
-        return null
+        return null;
     }
 
     property int scrollAttempts: 0
@@ -139,33 +212,33 @@ Scope {
         interval: 120
         repeat: true
         onTriggered: {
-            root.scrollAttempts++
-            root.scrollToPendingSection()
+            root.scrollAttempts++;
+            root.scrollToPendingSection();
             if (root.pendingSection === "" || root.scrollAttempts > 20) {
-                stop()
-                root.scrollAttempts = 0
+                stop();
+                root.scrollAttempts = 0;
             }
         }
     }
 
     onCurrentPageChanged: {
-        visitedMask = visitedMask | (1 << currentPage)
+        visitedMask = visitedMask | (1 << currentPage);
         // Keep the selected entry visible in the scrollable navigation rail
-        // (25 is the tab array's top offset inside the Flickable)
-        const itemHeight = 56
-        const top = 25 + currentPage * itemHeight
+        const itemHeight = 56;
+        const top = currentPage * itemHeight;
         if (top < navScroll.contentY)
-            navScroll.contentY = top
+            navScroll.contentY = top;
         else if (top + itemHeight > navScroll.contentY + navScroll.height)
-            navScroll.contentY = Math.min(top + itemHeight - navScroll.height, navScroll.contentHeight - navScroll.height)
+            navScroll.contentY = Math.min(top + itemHeight - navScroll.height, navScroll.contentHeight
+                                          - navScroll.height);
     }
 
     Connections {
         target: GlobalStates
         function onSettingsOpenChanged() {
             if (GlobalStates.settingsOpen) {
-                Config.readWriteDelay = 0
-                root.resetState()
+                Config.readWriteDelay = 0;
+                root.resetState();
             }
         }
     }
@@ -175,13 +248,14 @@ Scope {
         visible: GlobalStates.settingsOpen
 
         function hide() {
-            GlobalStates.settingsOpen = false
+            GlobalStates.settingsOpen = false;
         }
 
         exclusiveZone: 0
         WlrLayershell.namespace: "quickshell:settings"
         WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: GlobalStates.settingsOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: GlobalStates.settingsOpen ? WlrKeyboardFocus.OnDemand :
+                                                                 WlrKeyboardFocus.None
         color: "transparent"
 
         anchors {
@@ -193,19 +267,19 @@ Scope {
 
         onVisibleChanged: {
             if (visible) {
-                GlobalFocusGrab.addDismissable(panelWindow)
-                settingsWindow.userMoved = false
+                GlobalFocusGrab.addDismissable(panelWindow);
+                settingsWindow.userMoved = false;
                 // Take focus so Esc / Ctrl+F work without clicking first
-                Qt.callLater(() => settingsWindow.forceActiveFocus())
+                Qt.callLater(() => settingsWindow.forceActiveFocus());
             } else {
-                GlobalFocusGrab.removeDismissable(panelWindow)
+                GlobalFocusGrab.removeDismissable(panelWindow);
             }
         }
 
         Connections {
             target: GlobalFocusGrab
             function onDismissed() {
-                panelWindow.hide()
+                panelWindow.hide();
             }
         }
 
@@ -216,7 +290,10 @@ Scope {
             z: 0
 
             Behavior on opacity {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                }
             }
 
             MouseArea {
@@ -228,6 +305,7 @@ Scope {
 
         Rectangle {
             id: settingsWindow
+            objectName: "settingsFrame"
             width: Math.min(parent.width - 80, 980)
             height: Math.min(parent.height - 80, 665)
             color: Appearance.colors.colLayer0
@@ -249,18 +327,24 @@ Scope {
             scale: GlobalStates.settingsOpen ? 1 : 0.95
 
             Behavior on opacity {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                }
             }
             Behavior on scale {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                }
             }
 
-            Keys.onPressed: (event) => {
+            Keys.onPressed: event => {
                 if (event.key === Qt.Key_Escape) {
-                    panelWindow.hide()
+                    panelWindow.hide();
                 } else if (event.key === Qt.Key_F && event.modifiers === Qt.ControlModifier) {
-                    settingsSearchField.forceActiveFocus()
-                    event.accepted = true
+                    settingsSearchField.forceActiveFocus();
+                    event.accepted = true;
                 }
             }
 
@@ -283,7 +367,9 @@ Scope {
                         anchors.rightMargin: 4
                         spacing: 8
 
-                        Item { Layout.preferredWidth: 12 }
+                        Item {
+                            Layout.preferredWidth: 12
+                        }
 
                         StyledText {
                             text: Translation.tr("Settings")
@@ -333,24 +419,26 @@ Scope {
                                     }
                                     background: Item {}
                                     onTextChanged: root.updateSearch(text)
-                                    Keys.onPressed: (event) => {
+                                    Keys.onPressed: event => {
                                         if (event.key === Qt.Key_Down) {
                                             if (searchResultsList.count > 0) {
-                                                searchResultsList.currentIndex = 0
-                                                searchResultsList.forceActiveFocus()
+                                                searchResultsList.currentIndex = 0;
+                                                searchResultsList.forceActiveFocus();
                                             }
-                                            event.accepted = true
-                                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                            event.accepted = true;
+                                        } else if (event.key === Qt.Key_Return || event.key
+                                                   === Qt.Key_Enter) {
+
                                             if (searchResultsList.count > 0)
-                                                root.navigateToSearchResult(SettingsSearch.results[0])
-                                            event.accepted = true
+                                                root.navigateToSearchResult(SettingsSearch.results[0]);
+                                            event.accepted = true;
                                         } else if (event.key === Qt.Key_Escape) {
                                             if (text !== "") {
-                                                root.clearSearch()
+                                                root.clearSearch();
                                             } else {
-                                                panelWindow.hide()
+                                                panelWindow.hide();
                                             }
-                                            event.accepted = true
+                                            event.accepted = true;
                                         }
                                     }
                                 }
@@ -387,7 +475,11 @@ Scope {
                     }
 
                     Rectangle {
-                        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
                         height: 1
                         color: Appearance.colors.colLayer0Border
                         opacity: 0.5
@@ -408,13 +500,9 @@ Scope {
 
                         NavigationRail {
                             id: navRail
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                bottom: parent.bottom
-                                leftMargin: 20
-                            }
-                            spacing: 10
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 12
 
                             Item {
                                 id: profileHeader
@@ -441,8 +529,7 @@ Scope {
                                             id: avatarImage
                                             anchors.fill: parent
                                             source: (Config.options?.profile?.avatarPicture ?? "") !== ""
-                                                ? "file://" + Config.options.profile.avatarPicture
-                                                : ""
+                                                    ? "file://" + Config.options.profile.avatarPicture : ""
                                             sourceSize.width: avatarImage.width * 2
                                             sourceSize.height: avatarImage.height * 2
                                             fillMode: Image.PreserveAspectCrop
@@ -460,7 +547,7 @@ Scope {
                                             }
                                             onStatusChanged: {
                                                 if (status === Image.Error)
-                                                    visible = false
+                                                    visible = false;
                                             }
                                         }
 
@@ -469,7 +556,10 @@ Scope {
                                             text: "account_circle"
                                             iconSize: 24
                                             color: Appearance.colors.colOnPrimaryContainer
-                                            visible: avatarImage.status === Image.Error || (Config.options?.profile?.avatarPicture ?? "") === ""
+                                            visible: avatarImage.status === Image.Error || (Config.options
+                                                                                            ?.profile
+                                                                                            ?.avatarPicture
+                                                                                            ?? "") === ""
                                         }
                                     }
 
@@ -479,7 +569,11 @@ Scope {
                                         Layout.alignment: Qt.AlignVCenter
 
                                         StyledText {
-                                            text: (Config.options?.profile?.displayName ?? "") === "" ? (Quickshell.env("USER") || "User") : Config.options.profile.displayName
+                                            text: (Config.options?.profile?.displayName ?? "") === "" ? (
+                                                                                                            Quickshell.env(
+                                                                                                                "USER")
+                                                                                                            || "User") :
+                                                                                                        Config.options.profile.displayName
                                             font.bold: true
                                             font.pixelSize: Appearance.font.pixelSize.normal
                                             color: Appearance.colors.colOnLayer0
@@ -492,9 +586,10 @@ Scope {
                                             elide: Text.ElideRight
                                             opacity: 0.7
                                             Layout.fillWidth: true
-                                            text: (Config.options?.profile?.descriptionText ?? "") === "::uptime::"
-                                                ? Translation.tr("Up %1").arg(DateTime.uptime)
-                                                : (SystemInfo.distroName || "Linux")
+                                            text: (Config.options?.profile?.descriptionText ?? "")
+                                                  === "::uptime::" ? Translation.tr("Up %1").arg(
+                                                                         DateTime.uptime) : (
+                                                                         SystemInfo.distroName || "Linux")
                                         }
                                     }
                                 }
@@ -508,50 +603,73 @@ Scope {
 
                             Rectangle {
                                 width: 160
-                                Layout.topMargin: -5
+                                Layout.topMargin: 0
                                 height: 2
                                 gradient: Gradient {
                                     orientation: Gradient.Horizontal
-                                    GradientStop { position: 0.0; color: "transparent" }
-                                    GradientStop { position: 0.2; color: Appearance.colors.colOutline }
-                                    GradientStop { position: 0.8; color: Appearance.colors.colOutline }
-                                    GradientStop { position: 1.0; color: "transparent" }
+                                    GradientStop {
+                                        position: 0.0
+                                        color: "transparent"
+                                    }
+                                    GradientStop {
+                                        position: 0.2
+                                        color: Appearance.colors.colOutline
+                                    }
+                                    GradientStop {
+                                        position: 0.8
+                                        color: Appearance.colors.colOutline
+                                    }
+                                    GradientStop {
+                                        position: 1.0
+                                        color: "transparent"
+                                    }
                                 }
                                 opacity: 0.15
                             }
 
                             FloatingActionButton {
                                 id: fab
-                                Layout.bottomMargin: -25
+                                objectName: "settingsConfigButton"
+                                Layout.bottomMargin: 0
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 48
                                 property bool justCopied: false
                                 iconText: justCopied ? "check" : "edit"
-                                buttonText: justCopied ? Translation.tr("Path copied") : Translation.tr("Config file")
+                                buttonText: justCopied ? Translation.tr("Path copied") : Translation.tr(
+                                                             "Config file")
                                 expanded: navRail.expanded
                                 downAction: () => {
-                                    Qt.openUrlExternally(`${Directories.config}/illogical-impulse/config.json`)
+                                    Qt.openUrlExternally(`${Directories.config
+                                                         }/illogical-impulse/config.json`);
                                 }
                                 altAction: () => {
-                                    Quickshell.clipboardText = CF.FileUtils.trimFileProtocol(`${Directories.config}/illogical-impulse/config.json`)
-                                    fab.justCopied = true
-                                    revertTextTimer.restart()
+                                    Quickshell.clipboardText = CF.FileUtils.trimFileProtocol(`
+${Directories.config}/illogical-impulse/config.json`);
+                                    fab.justCopied = true;
+                                    revertTextTimer.restart();
                                 }
 
                                 Timer {
                                     id: revertTextTimer
                                     interval: 1500
-                                    onTriggered: { fab.justCopied = false }
+                                    onTriggered: {
+                                        fab.justCopied = false;
+                                    }
                                 }
 
                                 StyledToolTip {
-                                    text: Translation.tr("Open the shell config file\nAlternatively right-click to copy path")
+                                    text: Translation.tr(
+                                              "Open the shell config file\nAlternatively right-click to copy path")
                                 }
                             }
 
                             Flickable {
                                 id: navScroll
+                                objectName: "settingsNavScroll"
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                contentHeight: navTabs.implicitHeight + 25
+                                Layout.minimumHeight: 0
+                                contentHeight: navTabs.implicitHeight
                                 contentWidth: width
                                 clip: true
                                 boundsBehavior: Flickable.StopAtBounds
@@ -560,14 +678,13 @@ Scope {
 
                                 NavigationRailTabArray {
                                     id: navTabs
-                                    // The array's Layout.topMargin has no effect
-                                    // outside a Layout; offset it directly.
-                                    y: 25
+                                    y: 0
                                     width: navScroll.width
                                     height: implicitHeight
                                     currentIndex: root.currentPage
                                     expanded: navRail.expanded
-                                    colToggled: root.showingProfile ? "transparent" : Appearance.colors.colSecondaryContainer
+                                    colToggled: root.showingProfile ? "transparent" :
+                                                                      Appearance.colors.colSecondaryContainer
                                     Repeater {
                                         model: root.pages
                                         NavigationRailButton {
@@ -575,8 +692,8 @@ Scope {
                                             required property var modelData
                                             toggled: root.currentPage === index && !root.showingProfile
                                             onPressed: {
-                                                root.currentPage = index
-                                                root.showingProfile = false
+                                                root.currentPage = index;
+                                                root.showingProfile = false;
                                             }
                                             expanded: navRail.expanded
                                             buttonIcon: modelData.icon
@@ -610,23 +727,15 @@ Scope {
                                     // Pages are loaded on first visit and stay loaded
                                     // afterwards. Search never loads a page: its index
                                     // is parsed from the page sources (see below).
-                                    active: Config.ready && (root.currentPage === index || (root.visitedMask & (1 << index)) !== 0)
+                                    active: Config.ready && (root.currentPage === index || (root.visitedMask
+                                                                                            & (1 << index))
+                                                             !== 0)
                                     asynchronous: true
 
                                     anchors.fill: parent
 
                                     property bool isActive: root.currentPage === index && !root.showingProfile
-                                    opacity: isActive ? 1 : 0
-                                    enabled: isActive
                                     visible: isActive
-                                    anchors.topMargin: isActive ? 0 : 12
-
-                                    Behavior on opacity {
-                                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                                    }
-                                    Behavior on anchors.topMargin {
-                                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                                    }
                                 }
                             }
 
@@ -637,17 +746,7 @@ Scope {
                                 source: Qt.resolvedUrl("../../settings/Profile.qml")
 
                                 property bool isActive: root.showingProfile
-                                opacity: isActive ? 1 : 0
-                                enabled: isActive
                                 visible: isActive
-                                anchors.topMargin: isActive ? 0 : 12
-
-                                Behavior on opacity {
-                                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                                }
-                                Behavior on anchors.topMargin {
-                                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                                }
                             }
 
                             // Search results, shown above the page stack
@@ -667,9 +766,12 @@ Scope {
 
                                     StyledText {
                                         Layout.leftMargin: 8
-                                        text: SettingsSearch.results.length === 0
-                                            ? Translation.tr("No settings found for \"%1\"").arg(SettingsSearch.query)
-                                            : Translation.tr("%1 settings found").arg(SettingsSearch.results.length)
+                                        text: SettingsSearch.results.length === 0 ? Translation.tr(
+                                                                                        "No settings found for \"%1\"").arg(
+                                                                                        SettingsSearch.query) :
+                                                                                    Translation.tr(
+                                                                                        "%1 settings found").arg(
+                                                                                        SettingsSearch.results.length)
                                         font.pixelSize: Appearance.font.pixelSize.small
                                         color: Appearance.colors.colSubtext
                                     }
@@ -683,15 +785,17 @@ Scope {
                                         model: SettingsSearch.results
                                         keyNavigationWraps: true
 
-                                        Keys.onPressed: (event) => {
+                                        Keys.onPressed: event => {
                                             if (event.key === Qt.Key_Escape) {
-                                                root.clearSearch()
-                                                settingsSearchField.forceActiveFocus()
-                                                event.accepted = true
-                                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                                root.clearSearch();
+                                                settingsSearchField.forceActiveFocus();
+                                                event.accepted = true;
+                                            } else if (event.key === Qt.Key_Return || event.key
+                                                       === Qt.Key_Enter) {
                                                 if (currentItem)
-                                                    root.navigateToSearchResult(SettingsSearch.results[currentIndex])
-                                                event.accepted = true
+                                                    root.navigateToSearchResult(
+                                                                SettingsSearch.results[currentIndex]);
+                                                event.accepted = true;
                                             }
                                         }
 
@@ -702,7 +806,8 @@ Scope {
                                             width: searchResultsList.width
                                             implicitHeight: 54
                                             buttonRadius: Appearance.rounding.small
-                                            colBackground: CF.ColorUtils.transparentize(Appearance.colors.colLayer1Hover, 1)
+                                            colBackground: CF.ColorUtils.transparentize(
+                                                               Appearance.colors.colLayer1Hover, 1)
                                             colBackgroundHover: Appearance.colors.colLayer1Hover
                                             onClicked: root.navigateToSearchResult(modelData)
 
@@ -716,8 +821,8 @@ Scope {
 
                                                 MaterialSymbol {
                                                     text: searchResultButton.modelData.sectionIcon !== ""
-                                                        ? searchResultButton.modelData.sectionIcon
-                                                        : searchResultButton.modelData.pageIcon
+                                                          ? searchResultButton.modelData.sectionIcon :
+                                                            searchResultButton.modelData.pageIcon
                                                     iconSize: 22
                                                     color: Appearance.colors.colPrimary
                                                 }
@@ -737,9 +842,9 @@ Scope {
                                                     StyledText {
                                                         Layout.fillWidth: true
                                                         elide: Text.ElideRight
-                                                        text: searchResultButton.modelData.section !== ""
-                                                            ? `${searchResultButton.modelData.pageName} · ${searchResultButton.modelData.section}`
-                                                            : searchResultButton.modelData.pageName
+                                                        text: searchResultButton.modelData.section !== "" ? `
+${searchResultButton.modelData.pageName} · ${searchResultButton.modelData.section}` :
+                                                                                                            searchResultButton.modelData.pageName
                                                         font.pixelSize: Appearance.font.pixelSize.smaller
                                                         color: Appearance.colors.colSubtext
                                                     }
@@ -791,19 +896,19 @@ Scope {
     // Page components are `qs:`-scheme URLs, which FileView cannot read;
     // translate them back to real filesystem paths via Quickshell.shellPath.
     function pageFilePath(component) {
-        const url = component.toString()
-        const prefix = "qs:@/qs/"
+        const url = component.toString();
+        const prefix = "qs:@/qs/";
         if (url.startsWith(prefix))
-            return CF.FileUtils.trimFileProtocol(Quickshell.shellPath(url.slice(prefix.length)))
-        return CF.FileUtils.trimFileProtocol(url)
+            return CF.FileUtils.trimFileProtocol(Quickshell.shellPath(url.slice(prefix.length)));
+        return CF.FileUtils.trimFileProtocol(url);
     }
 
     function refreshKeybindIndex() {
         for (let i = 0; i < pages.length; i++) {
             if (pages[i].component.toString().endsWith("KeybindsConfig.qml")) {
-                SettingsSearch.indexKeybinds(i, pages[i].name, pages[i].icon,
-                    [keybindsMainView.text(), keybindsCustomView.text()])
-                return
+                SettingsSearch.indexKeybinds(i, pages[i].name, pages[i].icon, [keybindsMainView.text(),
+                                                                               keybindsCustomView.text()]);
+                return;
             }
         }
     }
@@ -812,17 +917,17 @@ Scope {
         target: "settings"
 
         function toggle(): void {
-            GlobalStates.settingsOpen = !GlobalStates.settingsOpen
+            GlobalStates.settingsOpen = !GlobalStates.settingsOpen;
         }
         function open(): void {
-            GlobalStates.settingsOpen = true
+            GlobalStates.settingsOpen = true;
         }
         function close(): void {
-            GlobalStates.settingsOpen = false
+            GlobalStates.settingsOpen = false;
         }
         function search(): void {
-            GlobalStates.settingsOpen = true
-            root.focusSearch()
+            GlobalStates.settingsOpen = true;
+            root.focusSearch();
         }
     }
 
@@ -836,8 +941,8 @@ Scope {
         name: "settingsSearch"
         description: "Opens settings with search focused"
         onPressed: {
-            GlobalStates.settingsOpen = true
-            root.focusSearch()
+            GlobalStates.settingsOpen = true;
+            root.focusSearch();
         }
     }
 }

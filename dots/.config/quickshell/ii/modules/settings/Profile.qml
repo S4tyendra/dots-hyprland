@@ -11,13 +11,16 @@ import qs.modules.common.functions
 ContentPage {
     id: page
     property string descriptionMode: {
-        if (Config.options.profile.descriptionText === "::uptime::") return "uptime"
-        return "distro"
+        if (Config.options.profile.descriptionText === "::uptime::")
+            return "uptime";
+        return "distro";
     }
 
     FolderListModel {
         id: avatarFolderModel
-        folder: Config.options.profile.avatarPath !== "" ? Qt.resolvedUrl(Config.options.profile.avatarPath) : ""
+        folder: Config.options.profile.avatarPath !== "" ? Qt.resolvedUrl(Config.options.profile.avatarPath) :
+                                                           ""
+
         showDirs: false
         nameFilters: ["*.png", "*.svg", "*.jpg", "*.jpeg", "*.webp"]
     }
@@ -32,28 +35,16 @@ ContentPage {
             title: Translation.tr("Avatar")
 
             GroupedList {
-                Item {
-                    Layout.fillWidth: true
-                    implicitHeight: avatarField.implicitHeight + 8
-
-                    MaterialTextArea {
-                        id: avatarField
-                        anchors { left: parent.left; right: parent.right; top: parent.top }
-                        placeholderText: Translation.tr("Avatar folder path (e.g. /home/user/Pictures/avatars)")
-                        text: Config.options.profile.avatarPath
-
-                        onTextChanged: {
-                            avatarDebounceTimer.restart()
-                        }
-
-                        Timer {
-                            id: avatarDebounceTimer
-                            interval: 1000
-                            repeat: false
-                            onTriggered: {
-                                Config.options.profile.avatarPath = avatarField.text
-                            }
-                        }
+                ConfigTextArea {
+                    id: avatarField
+                    text: Translation.tr("Avatar folder")
+                    placeholderText: Translation.tr("Path to an avatar folder")
+                    value: Config.options.profile.avatarPath
+                    onValueChanged: avatarFieldSaveTimer.restart()
+                    Timer {
+                        id: avatarFieldSaveTimer
+                        interval: 1000
+                        onTriggered: Config.options.profile.avatarPath = avatarField.value
                     }
                 }
 
@@ -75,7 +66,8 @@ ContentPage {
                             radius: width / 2
                             color: Appearance.colors.colLayer2
 
-                            property bool isSelected: FileUtils.trimFileProtocol(filePath.toString()) === Config.options.profile.avatarPicture
+                            property bool isSelected: FileUtils.trimFileProtocol(filePath.toString())
+                                                      === Config.options.profile.avatarPicture
 
                             Image {
                                 anchors.fill: parent
@@ -106,7 +98,8 @@ ContentPage {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: Config.options.profile.avatarPicture = FileUtils.trimFileProtocol(filePath.toString())
+                                onClicked: Config.options.profile.avatarPicture = FileUtils.trimFileProtocol(
+                                               filePath.toString())
                             }
                         }
                     }
@@ -138,53 +131,40 @@ ContentPage {
                 title: Translation.tr("Identity")
 
                 GroupedList {
-                    Item {
-                        Layout.fillWidth: true
-                        implicitHeight: displayNameField.implicitHeight + 8
-
-                        MaterialTextArea {
-                            id: displayNameField
-                            anchors { left: parent.left; right: parent.right; top: parent.top }
-                            placeholderText: SystemInfo.username
-                            text: Config.options.profile.displayName
-
-                            onTextChanged: {
-                                displayNameDebounceTimer.restart()
-                            }
-
-                            Timer {
-                                id: displayNameDebounceTimer
-                                interval: 800
-                                running: false
-                                onTriggered: {
-                                    Config.options.profile.displayName = displayNameField.text
-                                }
-                            }
+                    ConfigTextArea {
+                        id: displayNameField
+                        text: Translation.tr("Display name")
+                        placeholderText: SystemInfo.username
+                        value: Config.options.profile.displayName
+                        onValueChanged: displayNameFieldSaveTimer.restart()
+                        Timer {
+                            id: displayNameFieldSaveTimer
+                            interval: 800
+                            onTriggered: Config.options.profile.displayName = displayNameField.value
                         }
                     }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        implicitHeight: 48
-
-                        StyledText {
-                            text: Translation.tr("Description")
-                            font.pixelSize: Appearance.font.pixelSize.normal
-                            color: Appearance.colors.colOnSecondaryContainer
-                            Layout.fillWidth: true
+                    ConfigSelectionArray {
+                        text: Translation.tr("Description")
+                        currentValue: page.descriptionMode
+                        onSelected: newValue => {
+                            if (newValue === "distro")
+                                Config.options.profile.descriptionText = "::distro::";
+                            if (newValue === "uptime")
+                                Config.options.profile.descriptionText = "::uptime::";
                         }
-
-                        ConfigSelectionArray {
-                            currentValue: page.descriptionMode
-                            onSelected: newValue => {
-                                if (newValue === "distro") Config.options.profile.descriptionText = "::distro::"
-                                if (newValue === "uptime") Config.options.profile.descriptionText = "::uptime::"
-                            }
-                            options: [
-                                { displayName: Translation.tr("Distro"), icon: "deployed_code", value: "distro" },
-                                { displayName: Translation.tr("Uptime"), icon: "timelapse",     value: "uptime" },
-                            ]
-                        }
+                        options: [
+                            {
+                                displayName: Translation.tr("Distro"),
+                                icon: "deployed_code",
+                                value: "distro"
+                            },
+                            {
+                                displayName: Translation.tr("Uptime"),
+                                icon: "timelapse",
+                                value: "uptime"
+                            },
+                        ]
                     }
                 }
             }

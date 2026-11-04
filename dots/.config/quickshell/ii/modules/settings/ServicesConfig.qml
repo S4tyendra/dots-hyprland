@@ -11,15 +11,19 @@ ContentPage {
         icon: "neurology"
         title: Translation.tr("AI")
 
-        MaterialTextArea {
-            Layout.fillWidth: true
-            placeholderText: Translation.tr("System prompt")
-            text: Config.options.ai.systemPrompt
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Qt.callLater(() => {
-                    Config.options.ai.systemPrompt = text;
-                });
+        GroupedList {
+            ConfigTextArea {
+                text: Translation.tr("System prompt")
+                fieldHeight: 160
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("System prompt")
+                value: Config.options.ai.systemPrompt
+                textArea.wrapMode: TextEdit.Wrap
+                onValueChanged: {
+                    Qt.callLater(() => {
+                        Config.options.ai.systemPrompt = value;
+                    });
+                }
             }
         }
     }
@@ -28,26 +32,28 @@ ContentPage {
         icon: "music_cast"
         title: Translation.tr("Music Recognition")
 
-        ConfigSpinBox {
-            icon: "timer_off"
-            text: Translation.tr("Total duration timeout (s)")
-            value: Config.options.musicRecognition.timeout
-            from: 10
-            to: 100
-            stepSize: 2
-            onValueChanged: {
-                Config.options.musicRecognition.timeout = value;
+        GroupedList {
+            ConfigSpinBox {
+                icon: "timer_off"
+                text: Translation.tr("Total duration timeout (s)")
+                value: Config.options.musicRecognition.timeout
+                from: 10
+                to: 100
+                stepSize: 2
+                onValueChanged: {
+                    Config.options.musicRecognition.timeout = value;
+                }
             }
-        }
-        ConfigSpinBox {
-            icon: "av_timer"
-            text: Translation.tr("Polling interval (s)")
-            value: Config.options.musicRecognition.interval
-            from: 2
-            to: 10
-            stepSize: 1
-            onValueChanged: {
-                Config.options.musicRecognition.interval = value;
+            ConfigSpinBox {
+                icon: "av_timer"
+                text: Translation.tr("Polling interval (s)")
+                value: Config.options.musicRecognition.interval
+                from: 2
+                to: 10
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.musicRecognition.interval = value;
+                }
             }
         }
     }
@@ -56,13 +62,16 @@ ContentPage {
         icon: "cell_tower"
         title: Translation.tr("Networking")
 
-        MaterialTextArea {
-            Layout.fillWidth: true
-            placeholderText: Translation.tr("User agent (for services that require it)")
-            text: Config.options.networking.userAgent
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Config.options.networking.userAgent = text;
+        GroupedList {
+            ConfigTextArea {
+                text: Translation.tr("User agent")
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("User agent (for services that require it)")
+                value: Config.options.networking.userAgent
+                textArea.wrapMode: TextEdit.Wrap
+                onValueChanged: {
+                    Config.options.networking.userAgent = value;
+                }
             }
         }
     }
@@ -71,41 +80,46 @@ ContentPage {
         icon: "memory"
         title: Translation.tr("Resources")
 
-        ConfigSpinBox {
-            icon: "av_timer"
-            text: Translation.tr("Polling interval (ms)")
-            value: Config.options.resources.updateInterval
-            from: 100
-            to: 10000
-            stepSize: 100
-            onValueChanged: {
-                Config.options.resources.updateInterval = value;
+        GroupedList {
+            ConfigSpinBox {
+                icon: "av_timer"
+                text: Translation.tr("Polling interval (ms)")
+                value: Config.options.resources.updateInterval
+                from: 100
+                to: 10000
+                stepSize: 100
+                onValueChanged: {
+                    Config.options.resources.updateInterval = value;
+                }
             }
         }
-        
     }
 
     ContentSection {
         icon: "file_open"
         title: Translation.tr("Save paths")
 
-        MaterialTextArea {
-            Layout.fillWidth: true
-            placeholderText: Translation.tr("Video Recording Path")
-            text: Config.options.screenRecord.savePath
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Config.options.screenRecord.savePath = text;
+        GroupedList {
+            ConfigTextArea {
+                text: Translation.tr("Video recording path")
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Video Recording Path")
+                value: Config.options.screenRecord.savePath
+                textArea.wrapMode: TextEdit.Wrap
+                onValueChanged: {
+                    Config.options.screenRecord.savePath = value;
+                }
             }
-        }
-        
-        MaterialTextArea {
-            Layout.fillWidth: true
-            placeholderText: Translation.tr("Screenshot Path (leave empty to just copy)")
-            text: Config.options.screenSnip.savePath
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Config.options.screenSnip.savePath = text;
+
+            ConfigTextArea {
+                text: Translation.tr("Screenshot path")
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Screenshot Path (leave empty to just copy)")
+                value: Config.options.screenSnip.savePath
+                textArea.wrapMode: TextEdit.Wrap
+                onValueChanged: {
+                    Config.options.screenSnip.savePath = value;
+                }
             }
         }
     }
@@ -114,90 +128,98 @@ ContentPage {
         icon: "search"
         title: Translation.tr("Search")
 
-        ConfigSwitch {
-            text: Translation.tr("Use Levenshtein distance-based algorithm instead of fuzzy")
-            checked: Config.options.search.sloppy
-            onCheckedChanged: {
-                Config.options.search.sloppy = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Could be better if you make a ton of typos,\nbut results can be weird and might not work with acronyms\n(e.g. \"GIMP\" might not give you the paint program)")
+        GroupedList {
+            ConfigSwitch {
+                text: Translation.tr("Use Levenshtein distance-based algorithm instead of fuzzy")
+                checked: Config.options.search.sloppy
+                onCheckedChanged: {
+                    Config.options.search.sloppy = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr(
+                              "Could be better if you make a ton of typos,\nbut results can be weird and might not work with acronyms\n(e.g. \"GIMP\" might not give you the paint program)")
+                }
             }
         }
 
         ContentSubsection {
             title: Translation.tr("Prefixes")
-            ConfigRow {
-                uniform: true
-                MaterialTextArea {
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Action prefix")
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Action")
-                    text: Config.options.search.prefix.action
-                    wrapMode: TextEdit.Wrap
-                    onTextChanged: {
-                        Config.options.search.prefix.action = text;
+                    value: Config.options.search.prefix.action
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.search.prefix.action = value;
                     }
                 }
-                MaterialTextArea {
+                ConfigTextArea {
+                    text: Translation.tr("Clipboard prefix")
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Clipboard")
-                    text: Config.options.search.prefix.clipboard
-                    wrapMode: TextEdit.Wrap
-                    onTextChanged: {
-                        Config.options.search.prefix.clipboard = text;
+                    value: Config.options.search.prefix.clipboard
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.search.prefix.clipboard = value;
                     }
                 }
-                MaterialTextArea {
+                ConfigTextArea {
+                    text: Translation.tr("Emoji prefix")
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Emojis")
-                    text: Config.options.search.prefix.emojis
-                    wrapMode: TextEdit.Wrap
-                    onTextChanged: {
-                        Config.options.search.prefix.emojis = text;
+                    value: Config.options.search.prefix.emojis
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.search.prefix.emojis = value;
                     }
                 }
-            }
 
-            ConfigRow {
-                uniform: true
-                MaterialTextArea {
+                ConfigTextArea {
+                    text: Translation.tr("Math prefix")
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Math")
-                    text: Config.options.search.prefix.math
-                    wrapMode: TextEdit.Wrap
-                    onTextChanged: {
-                        Config.options.search.prefix.math = text;
+                    value: Config.options.search.prefix.math
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.search.prefix.math = value;
                     }
                 }
-                MaterialTextArea {
+                ConfigTextArea {
+                    text: Translation.tr("Shell command prefix")
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Shell command")
-                    text: Config.options.search.prefix.shellCommand
-                    wrapMode: TextEdit.Wrap
-                    onTextChanged: {
-                        Config.options.search.prefix.shellCommand = text;
+                    value: Config.options.search.prefix.shellCommand
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.search.prefix.shellCommand = value;
                     }
                 }
-                MaterialTextArea {
+                ConfigTextArea {
+                    text: Translation.tr("Web search prefix")
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Web search")
-                    text: Config.options.search.prefix.webSearch
-                    wrapMode: TextEdit.Wrap
-                    onTextChanged: {
-                        Config.options.search.prefix.webSearch = text;
+                    value: Config.options.search.prefix.webSearch
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.search.prefix.webSearch = value;
                     }
                 }
             }
         }
         ContentSubsection {
             title: Translation.tr("Web search")
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Base URL")
-                text: Config.options.search.engineBaseUrl
-                wrapMode: TextEdit.Wrap
-                onTextChanged: {
-                    Config.options.search.engineBaseUrl = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Base URL")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Base URL")
+                    value: Config.options.search.engineBaseUrl
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.search.engineBaseUrl = value;
+                    }
                 }
             }
         }
@@ -232,7 +254,7 @@ ContentPage {
     ContentSection {
         icon: "weather_mix"
         title: Translation.tr("Weather")
-        ConfigRow {
+        GroupedList {
             ConfigSwitch {
                 buttonIcon: "assistant_navigation"
                 text: Translation.tr("Enable GPS based location")
@@ -252,31 +274,32 @@ ContentPage {
                     text: Translation.tr("It may take a few seconds to update")
                 }
             }
-        }
-        
-        CitySearchField {
-            Layout.fillWidth: true
-        }
-        ConfigSpinBox {
-            icon: "av_timer"
-            text: Translation.tr("Polling interval (m)")
-            value: Config.options.bar.weather.fetchInterval
-            from: 5
-            to: 50
-            stepSize: 5
-            onValueChanged: {
-                Config.options.bar.weather.fetchInterval = value;
+
+            CitySearchField {
+                Layout.fillWidth: true
             }
-        }
-        MaterialTextArea {
-            Layout.fillWidth: true
-            placeholderText: Translation.tr("API Key (weather.com)")
-            text: Config.options.bar.weather.apiKey
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Qt.callLater(() => {
-                    Config.options.bar.weather.apiKey = text;
-                });
+            ConfigSpinBox {
+                icon: "av_timer"
+                text: Translation.tr("Polling interval (m)")
+                value: Config.options.bar.weather.fetchInterval
+                from: 5
+                to: 50
+                stepSize: 5
+                onValueChanged: {
+                    Config.options.bar.weather.fetchInterval = value;
+                }
+            }
+            ConfigTextArea {
+                text: Translation.tr("Weather API key")
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("API Key (weather.com)")
+                value: Config.options.bar.weather.apiKey
+                textArea.wrapMode: TextEdit.Wrap
+                onValueChanged: {
+                    Qt.callLater(() => {
+                        Config.options.bar.weather.apiKey = value;
+                    });
+                }
             }
         }
     }

@@ -22,35 +22,24 @@ Singleton {
     property var allEntries: []
     property string query: ""
 
-    readonly property var results: {
-        const q = root.query.trim().toLowerCase()
-        if (q === "")
-            return []
+    signal navigationRequested(var entry)
+    readonly property var results: search(root.query, 60)
 
-        const scored = []
-        for (let i = 0; i < root.allEntries.length; i++) {
-            const entry = root.allEntries[i]
-            const label = (entry.label || "").toLowerCase()
-            const section = (entry.section || "").toLowerCase()
-            const pageName = (entry.pageName || "").toLowerCase()
-
-            let score = -1
-            if (label.startsWith(q))
-                score = 0
-            else if (label.includes(q))
-                score = 1
-            else if (section.startsWith(q))
-                score = 2
-            else if (section.includes(q))
-                score = 3
-            else if (pageName.includes(q))
-                score = 4
-            if (score < 0)
-                continue
-            scored.push({ entry: entry, score: score })
+    function search(query, limit = 60) {
+        const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        if (tokens.length === 0) return [];
+        const scored = [];
+        for (const entry of root.allEntries) {
+            const label = Translation.tr(entry.label).toLowerCase();
+            const section = Translation.tr(entry.section).toLowerCase();
+            const page = entry.pageName.toLowerCase();
+            const combined = [label, section, page, entry.label, entry.section].join(" ").toLowerCase();
+            if (!tokens.every(token => combined.includes(token))) continue;
+            const score = tokens.reduce((total, token) => total + (label.startsWith(token) ? 0 : label.includes(token) ? 1 : section.includes(token) ? 2 : 3), 0);
+            scored.push({entry: entry, score: score});
         }
-        scored.sort((a, b) => a.score - b.score || a.entry.label.length - b.entry.label.length)
-        return scored.slice(0, 60).map(item => item.entry)
+        scored.sort((a, b) => a.score - b.score || a.entry.label.length - b.entry.label.length);
+        return scored.slice(0, limit).map(item => item.entry);
     }
 
     // Block types whose label property names a searchable setting. The

@@ -513,7 +513,7 @@ ContentPage {
                     spacing: 12
 
                     Rectangle {
-                        implicitWidth: Math.max(64, comboText.implicitWidth + 20)
+                        implicitWidth: Math.min(Math.max(64, comboText.implicitWidth + 20), bindRow.width * 0.4)
                         implicitHeight: 28
                         radius: Appearance.rounding.small
                         color: Appearance.colors.colLayer2
@@ -523,6 +523,8 @@ ContentPage {
                         StyledText {
                             id: comboText
                             anchors.centerIn: parent
+                            width: parent.width - 20
+                            elide: Text.ElideRight
                             text: page.displayCombo(bindRow.modelData)
                             font {
                                 family: Appearance.font.family.monospace
@@ -581,7 +583,7 @@ ContentPage {
         id: rebindPopup
         parent: Overlay.overlay
         anchors.centerIn: Overlay.overlay
-        width: 380
+        width: Math.min(380, page.width - 32)
         padding: 20
         modal: true
         focus: true

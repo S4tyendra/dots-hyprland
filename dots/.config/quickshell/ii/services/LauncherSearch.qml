@@ -389,6 +389,19 @@ Singleton {
         //////////////// Apps //////////////////
         result = result.concat(appResultObjects);
 
+        // Settings share the overlay's source index; searching never instantiates pages.
+        if (!startsWithShellCommandPrefix && !startsWithWebSearchPrefix && !startsWithMathPrefix) {
+            result = result.concat(SettingsSearch.search(root.query, 6).map(entry => resultComp.createObject(null, {
+                name: Translation.tr(entry.label),
+                comment: entry.pageName + (entry.section ? " · " + Translation.tr(entry.section) : ""),
+                verb: Translation.tr("Open"),
+                type: Translation.tr("Setting"),
+                iconName: entry.sectionIcon || entry.pageIcon,
+                iconType: LauncherSearchResult.IconType.Material,
+                execute: () => SettingsSearch.navigationRequested(entry)
+            })));
+        }
+
         ////////// Launcher actions ////////////
         result = result.concat(launcherActionObjects);
 
