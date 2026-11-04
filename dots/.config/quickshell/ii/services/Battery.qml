@@ -30,7 +30,80 @@ Singleton {
     property real energyRate: UPower.displayDevice.changeRate
     property real timeToEmpty: UPower.displayDevice.timeToEmpty
     property real timeToFull: UPower.displayDevice.timeToFull
-    property int chargeCycles: (function() {
+    readonly property real energy: UPower.displayDevice?.energy ?? 0
+    readonly property real energyCapacity: UPower.displayDevice?.energyCapacity ?? 0
+    readonly property string model: UPower.displayDevice?.model ?? ""
+    readonly property int powerProfile: PowerProfiles.profile
+    readonly property bool hasPerformanceProfile: PowerProfiles.hasPerformanceProfile
+
+    function setPowerProfile(profile) {
+        PowerProfiles.profile = profile
+    }
+
+    // Charge limit (charge_control_end_threshold exposed by some laptops).
+    // The sysfs file is root-owned on most distros, so this only becomes
+    // available when the user made it writable (e.g. a udev rule); the
+    // read probe below checks writability and hides the control otherwise.
+    readonly property string nativePath: UPower.displayDevice?.nativePath ?? ""
+    readonly property string chargeLimitPath: nativePath !== "" ? `${nativePath}/charge_control_end_threshold` : ""
+    readonly property int chargeLimitMin: 50
+    readonly property int chargeLimitMax: 100
+    property bool chargeLimitSupported: false
+    property int chargeLimit: 100
+
+    function setChargeLimit(value) {
+        if (!root.chargeLimitSupported)
+            return
+        const clamped = Math.max(root.chargeLimitMin, Math.min(root.chargeLimitMax, Math.round(value)))
+        root.chargeLimit = clamped
+        writeChargeLimit.running = false
+        writeChargeLimit.command = ["sh", "-c", `printf '%s\\n' '${clamped}' > '${root.chargeLimitPath}'`]
+        writeChargeLimit.running = true
+    }
+
+    onChargeLimitPathChanged: {
+        root.chargeLimitSupported = false
+        if (root.chargeLimitPath !== "")
+            readChargeLimit.running = true
+    }
+
+    Component.onCompleted: {
+        if (root.chargeLimitPath !== "")
+            readChargeLimit.running = true
+    }
+
+    Process {
+        id: readChargeLimit
+        command: ["sh", "-c", `test -w '${root.chargeLimitPath}' && cat '${root.chargeLimitPath}'`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const value = parseInt(text.trim())
+                if (!isNaN(value)) {
+                    root.chargeLimit = value
+                    root.chargeLimitSupported = true
+                }
+            }
+        }
+        onExited: (code) => {
+            if (code !== 0)
+                root.chargeLimitSupported = false
+        }
+    }
+
+    Process {
+        id: writeChargeLimit
+        onExited: (code) => {
+            if (code !== 0)
+                console.warn("[Battery] Failed to write charge limit to", root.chargeLimitPath)
+            // Re-read either way: on failure this reverts chargeLimit to the
+            // value actually in effect (and drops chargeLimitSupported if
+            // the file turns out not to be writable after all).
+            readChargeLimit.running = true
+        }
+    }
+    // Live bindings, not one-shot lookups: UPower may enumerate the battery
+    // after this singleton is created, and both values can change over time.
+    property int chargeCycles: {
         const devList = UPower.devices.values;
         for (let i = 0; i < devList.length; ++i) {
             const dev = devList[i];
@@ -39,9 +112,9 @@ Singleton {
             }
         }
         return 0;
-    })()
+    }
 
-    property real health: (function() {
+    property real health: {
         const devList = UPower.devices.values;
         for (let i = 0; i < devList.length; ++i) {
             const dev = devList[i];
@@ -68,7 +141,7 @@ Singleton {
             }
         }
         return 0;
-    })()
+    }
 
 
     onIsLowAndNotChargingChanged: {

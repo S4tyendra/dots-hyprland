@@ -41,6 +41,9 @@ Singleton {
     property string generatedWallpaperCategoryPath: FileUtils.trimFileProtocol(`${Directories.state}/user/generated/wallpaper/category.txt`)
     property string generatedBlurredWallpaperPath: FileUtils.trimFileProtocol(`${Directories.state}/user/generated/wallpaper/blurred.png`)
     property string cliphistDecode: FileUtils.trimFileProtocol(`/tmp/quickshell/media/cliphist`)
+    property string cliphistPinsDir: FileUtils.trimFileProtocol(`${Directories.state}/user/cliphist-pins`)
+    property string cliphistPinsIndex: FileUtils.trimFileProtocol(`${Directories.state}/user/cliphist-pins/index.json`)
+    property string batteryHistoryPath: FileUtils.trimFileProtocol(`${Directories.state}/user/battery-history.json`)
     property string screenshotTemp: "/tmp/quickshell/media/screenshot"
     property string wallpaperSwitchScriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/colors/switchwall.sh`)
     property string defaultAiPrompts: Quickshell.shellPath("defaults/ai/prompts")
@@ -54,14 +57,20 @@ Singleton {
     property string userAvatarPathRicersAndWeirdSystems2: FileUtils.trimFileProtocol(`${Directories.home}.face.icon`)
     // Cleanup on init
     Component.onCompleted: {
-        Quickshell.execDetached(["mkdir", "-p", `${shellConfig}`])
-        Quickshell.execDetached(["mkdir", "-p", `${favicons}`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${coverArt}'; mkdir -p '${coverArt}'`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${booruPreviews}'; mkdir -p '${booruPreviews}'`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${latexOutput}'; mkdir -p '${latexOutput}'`])
-        Quickshell.execDetached(["bash", "-c", `rm -rf '${cliphistDecode}'; mkdir -p '${cliphistDecode}'`])
-        Quickshell.execDetached(["mkdir", "-p", `${aiChats}`])
-        Quickshell.execDetached(["mkdir", "-p", `${userActions}`])
-        Quickshell.execDetached(["rm", "-rf", `${tempImages}`])
+        // One shell instead of a dozen process spawns at startup. Steps are
+        // separated with `;`, not `&&`: one failing cleanup must not block
+        // every other directory (and the pins index) from being created.
+        // The state "user" dir is listed explicitly — battery history and
+        // the cliphist pins both live under it and assume it exists.
+        const keepDirs = [shellConfig, favicons, aiChats, userActions, cliphistPinsDir, FileUtils.trimFileProtocol(`${Directories.state}/user`)]
+        const recreatedDirs = [coverArt, booruPreviews, latexOutput, cliphistDecode]
+        const steps = []
+        for (const path of keepDirs)
+            steps.push(`mkdir -p '${path}'`)
+        for (const path of recreatedDirs)
+            steps.push(`rm -rf '${path}'; mkdir -p '${path}'`)
+        steps.push(`rm -rf '${tempImages}'`)
+        steps.push(`[ -f '${cliphistPinsIndex}' ] || printf '[]' > '${cliphistPinsIndex}'`)
+        Quickshell.execDetached(["bash", "-c", steps.join("; ")])
     }
 }

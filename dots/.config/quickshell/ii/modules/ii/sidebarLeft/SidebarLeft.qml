@@ -58,14 +58,39 @@ Scope { // Scope
         else root.pin = !root.pin;
     }
 
-    Component.onCompleted: {
-        root.sidebarContent = contentComponent.createObject(null, {
-            "scopeRoot": root,
-        });
-        sidebarLoader.item.contentParent.children = [root.sidebarContent];
+    // The left sidebar content is expensive (AI chat, translator, anime tabs),
+    // so only instantiate it the first time the sidebar is actually opened.
+    property bool contentCreated: false
+
+    function ensureSidebarContent() {
+        if (!root.contentCreated) {
+            root.contentCreated = true;
+            root.sidebarContent = root.contentComponent.createObject(null, {
+                "scopeRoot": root,
+            });
+            if (root.detach && detachedSidebarLoader.item)
+                detachedSidebarLoader.item.contentParent.children = [root.sidebarContent];
+            else if (sidebarLoader.item)
+                sidebarLoader.item.contentParent.children = [root.sidebarContent];
+            return;
+        }
+        if (!root.detach && sidebarLoader.item && root.sidebarContent
+                && root.sidebarContent.parent !== sidebarLoader.item.contentParent) {
+            sidebarLoader.item.contentParent.children = [root.sidebarContent];
+        }
+    }
+
+    Connections {
+        target: GlobalStates
+        function onSidebarLeftOpenChanged() {
+            if (GlobalStates.sidebarLeftOpen)
+                root.ensureSidebarContent();
+        }
     }
 
     onDetachChanged: {
+        if (!root.contentCreated)
+            return;
         if (root.detach) {
             GlobalFocusGrab.removeDismissable(sidebarLoader.item) // Remove sidebar from the focus grab system
             sidebarContent.parent = null; // Detach content from sidebar
@@ -83,6 +108,10 @@ Scope { // Scope
     Loader {
         id: sidebarLoader
         active: true
+        onLoaded: {
+            if (root.contentCreated && root.sidebarContent && !root.detach)
+                sidebarLoader.item.contentParent.children = [root.sidebarContent];
+        }
         
         sourceComponent: PanelWindow { // Window
             id: panelWindow

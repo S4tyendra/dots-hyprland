@@ -23,18 +23,141 @@ Scope {
     property var pages: [
         { name: Translation.tr("Quick"),      icon: "instant_mix",    component: Qt.resolvedUrl("../../settings/QuickConfig.qml") },
         { name: Translation.tr("General"),    icon: "browse",         component: Qt.resolvedUrl("../../settings/GeneralConfig.qml") },
+        { name: Translation.tr("Battery"),    icon: "battery_android_full", component: Qt.resolvedUrl("../../settings/BatteryConfig.qml") },
         { name: Translation.tr("Bar"),        icon: "toast",          iconRotation: 180, component: Qt.resolvedUrl("../../settings/BarConfig.qml") },
         { name: Translation.tr("Background"), icon: "texture",        component: Qt.resolvedUrl("../../settings/BackgroundConfig.qml") },
         { name: Translation.tr("Interface"),  icon: "bottom_app_bar", component: Qt.resolvedUrl("../../settings/InterfaceConfig.qml") },
+        { name: Translation.tr("Keybinds"),   icon: "keyboard",       component: Qt.resolvedUrl("../../settings/KeybindsConfig.qml") },
         { name: Translation.tr("Services"),   icon: "settings",       component: Qt.resolvedUrl("../../settings/ServicesConfig.qml") },
         { name: Translation.tr("Advanced"),   icon: "construction",   component: Qt.resolvedUrl("../../settings/AdvancedConfig.qml") },
         { name: Translation.tr("About"),      icon: "info",           component: Qt.resolvedUrl("../../settings/About.qml") }
     ]
     property int currentPage: 0
+    // Bit mask of pages that were opened and should stay loaded
+    property int visitedMask: 0
+    property string pendingSection: ""
 
     function resetState() {
         currentPage = 0
         showingProfile = false
+        pendingSection = ""
+        clearSearch()
+    }
+
+    function updateSearch(text) {
+        const newSession = SettingsSearch.query.trim() === "" && text.trim() !== ""
+        SettingsSearch.query = text
+        if (newSession) {
+            // The index is parsed from the pages' source files (see the
+            // FileViews below), so refreshing it is just re-reading a few
+            // text files — no page ever gets instantiated for search.
+            for (let i = 0; i < indexSources.count; i++) {
+                const view = indexSources.objectAt(i)
+                if (view)
+                    view.reload()
+            }
+            keybindsMainView.reload()
+            keybindsCustomView.reload()
+        }
+    }
+
+    function clearSearch() {
+        settingsSearchField.text = ""
+        SettingsSearch.query = ""
+        pendingSection = ""
+    }
+
+    function navigateToSearchResult(result) {
+        visitedMask = visitedMask | (1 << result.pageIndex)
+        currentPage = result.pageIndex
+        showingProfile = false
+        clearSearch()
+        pendingSection = result.section
+        scrollAttempts = 0
+        scrollTimer.restart()
+    }
+
+    // Focus the search field once the panel is actually visible
+    function focusSearch() {
+        searchFocusAttempts = 0
+        searchFocusTimer.restart()
+    }
+
+    property int searchFocusAttempts: 0
+
+    Timer {
+        id: searchFocusTimer
+        interval: 80
+        repeat: true
+        onTriggered: {
+            searchFocusAttempts++
+            if (panelWindow.visible && searchFocusAttempts > 1) {
+                stop()
+                settingsSearchField.forceActiveFocus()
+            } else if (searchFocusAttempts > 20) {
+                stop()
+            }
+        }
+    }
+
+    function scrollToPendingSection() {
+        if (pendingSection === "")
+            return
+        const loader = pagesRepeater.itemAt(currentPage)
+        if (!loader || !loader.item)
+            return
+        const section = findSectionByTitle(loader.item, pendingSection)
+        if (!section)
+            return
+        pendingSection = ""
+        // section.y is relative to its parent column, not to the page's
+        // scrollable content; map it into content coordinates.
+        const targetY = section.mapToItem(loader.item.contentItem, 0, 0).y
+        loader.item.contentY = Math.max(0, targetY - 12)
+    }
+
+    function findSectionByTitle(item, title) {
+        if (!item)
+            return null
+        if (item.title === title && item.children !== undefined)
+            return item
+        const children = item.children
+        if (!children)
+            return null
+        for (let i = 0; i < children.length; i++) {
+            const found = findSectionByTitle(children[i], title)
+            if (found)
+                return found
+        }
+        return null
+    }
+
+    property int scrollAttempts: 0
+
+    Timer {
+        id: scrollTimer
+        interval: 120
+        repeat: true
+        onTriggered: {
+            root.scrollAttempts++
+            root.scrollToPendingSection()
+            if (root.pendingSection === "" || root.scrollAttempts > 20) {
+                stop()
+                root.scrollAttempts = 0
+            }
+        }
+    }
+
+    onCurrentPageChanged: {
+        visitedMask = visitedMask | (1 << currentPage)
+        // Keep the selected entry visible in the scrollable navigation rail
+        // (25 is the tab array's top offset inside the Flickable)
+        const itemHeight = 56
+        const top = 25 + currentPage * itemHeight
+        if (top < navScroll.contentY)
+            navScroll.contentY = top
+        else if (top + itemHeight > navScroll.contentY + navScroll.height)
+            navScroll.contentY = Math.min(top + itemHeight - navScroll.height, navScroll.contentHeight - navScroll.height)
     }
 
     Connections {
@@ -72,6 +195,8 @@ Scope {
             if (visible) {
                 GlobalFocusGrab.addDismissable(panelWindow)
                 settingsWindow.userMoved = false
+                // Take focus so Esc / Ctrl+F work without clicking first
+                Qt.callLater(() => settingsWindow.forceActiveFocus())
             } else {
                 GlobalFocusGrab.removeDismissable(panelWindow)
             }
@@ -117,6 +242,7 @@ Scope {
             }
 
             property bool userMoved: false
+            focus: true
             anchors.centerIn: userMoved ? undefined : parent
 
             opacity: GlobalStates.settingsOpen ? 1 : 0
@@ -132,6 +258,9 @@ Scope {
             Keys.onPressed: (event) => {
                 if (event.key === Qt.Key_Escape) {
                     panelWindow.hide()
+                } else if (event.key === Qt.Key_F && event.modifiers === Qt.ControlModifier) {
+                    settingsSearchField.forceActiveFocus()
+                    event.accepted = true
                 }
             }
 
@@ -162,6 +291,84 @@ Scope {
                             font.weight: Font.Medium
                             color: Appearance.colors.colOnLayer0
                             Layout.fillWidth: true
+                        }
+
+                        // Search across all settings pages
+                        Rectangle {
+                            Layout.preferredWidth: 340
+                            Layout.preferredHeight: 32
+                            radius: Appearance.rounding.full
+                            color: Appearance.colors.colLayer1
+                            border.width: settingsSearchField.activeFocus ? 1 : 0
+                            border.color: Appearance.colors.colPrimary
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 4
+                                spacing: 6
+
+                                MaterialSymbol {
+                                    text: "search"
+                                    iconSize: 18
+                                    color: Appearance.colors.colSubtext
+                                }
+
+                                TextField {
+                                    id: settingsSearchField
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    padding: 0
+                                    leftPadding: 0
+                                    rightPadding: 0
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    placeholderText: Translation.tr("Search settings (Ctrl+F)")
+                                    placeholderTextColor: Appearance.colors.colSubtext
+                                    color: Appearance.colors.colOnLayer1
+                                    selectionColor: Appearance.colors.colSecondaryContainer
+                                    selectedTextColor: Appearance.colors.colOnSecondaryContainer
+                                    font {
+                                        family: Appearance.font.family.main
+                                        pixelSize: Appearance.font.pixelSize.small
+                                    }
+                                    background: Item {}
+                                    onTextChanged: root.updateSearch(text)
+                                    Keys.onPressed: (event) => {
+                                        if (event.key === Qt.Key_Down) {
+                                            if (searchResultsList.count > 0) {
+                                                searchResultsList.currentIndex = 0
+                                                searchResultsList.forceActiveFocus()
+                                            }
+                                            event.accepted = true
+                                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                            if (searchResultsList.count > 0)
+                                                root.navigateToSearchResult(SettingsSearch.results[0])
+                                            event.accepted = true
+                                        } else if (event.key === Qt.Key_Escape) {
+                                            if (text !== "") {
+                                                root.clearSearch()
+                                            } else {
+                                                panelWindow.hide()
+                                            }
+                                            event.accepted = true
+                                        }
+                                    }
+                                }
+
+                                RippleButton {
+                                    visible: settingsSearchField.text !== ""
+                                    implicitWidth: 24
+                                    implicitHeight: 24
+                                    buttonRadius: Appearance.rounding.full
+                                    onClicked: root.clearSearch()
+                                    contentItem: MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: "close"
+                                        iconSize: 16
+                                        color: Appearance.colors.colSubtext
+                                    }
+                                }
+                            }
                         }
 
                         RippleButton {
@@ -340,31 +547,45 @@ Scope {
                                 }
                             }
 
-                            NavigationRailTabArray {
-                                currentIndex: root.currentPage
-                                expanded: navRail.expanded
-                                colToggled: root.showingProfile ? "transparent" : Appearance.colors.colSecondaryContainer
-                                Repeater {
-                                    model: root.pages
-                                    NavigationRailButton {
-                                        required property var index
-                                        required property var modelData
-                                        toggled: root.currentPage === index && !root.showingProfile
-                                        onPressed: {
-                                            root.currentPage = index
-                                            root.showingProfile = false
+                            Flickable {
+                                id: navScroll
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                contentHeight: navTabs.implicitHeight + 25
+                                contentWidth: width
+                                clip: true
+                                boundsBehavior: Flickable.StopAtBounds
+                                flickableDirection: Flickable.VerticalFlick
+                                interactive: contentHeight > height
+
+                                NavigationRailTabArray {
+                                    id: navTabs
+                                    // The array's Layout.topMargin has no effect
+                                    // outside a Layout; offset it directly.
+                                    y: 25
+                                    width: navScroll.width
+                                    height: implicitHeight
+                                    currentIndex: root.currentPage
+                                    expanded: navRail.expanded
+                                    colToggled: root.showingProfile ? "transparent" : Appearance.colors.colSecondaryContainer
+                                    Repeater {
+                                        model: root.pages
+                                        NavigationRailButton {
+                                            required property var index
+                                            required property var modelData
+                                            toggled: root.currentPage === index && !root.showingProfile
+                                            onPressed: {
+                                                root.currentPage = index
+                                                root.showingProfile = false
+                                            }
+                                            expanded: navRail.expanded
+                                            buttonIcon: modelData.icon
+                                            buttonIconRotation: modelData.iconRotation || 0
+                                            buttonText: modelData.name
+                                            showToggledHighlight: false
                                         }
-                                        expanded: navRail.expanded
-                                        buttonIcon: modelData.icon
-                                        buttonIconRotation: modelData.iconRotation || 0
-                                        buttonText: modelData.name
-                                        showToggledHighlight: false
                                     }
                                 }
-                            }
-
-                            Item {
-                                Layout.fillHeight: true
                             }
                         }
                     }
@@ -386,7 +607,11 @@ Scope {
                                     required property var index
                                     source: modelData.component
 
-                                    active: Config.ready && (root.currentPage === index || item !== null)
+                                    // Pages are loaded on first visit and stay loaded
+                                    // afterwards. Search never loads a page: its index
+                                    // is parsed from the page sources (see below).
+                                    active: Config.ready && (root.currentPage === index || (root.visitedMask & (1 << index)) !== 0)
+                                    asynchronous: true
 
                                     anchors.fill: parent
 
@@ -424,9 +649,161 @@ Scope {
                                     NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                                 }
                             }
+
+                            // Search results, shown above the page stack
+                            Rectangle {
+                                anchors.fill: parent
+                                z: 5
+                                visible: SettingsSearch.query.trim() !== ""
+                                radius: Appearance.rounding.normal
+                                color: Appearance.colors.colLayer0
+
+                                ColumnLayout {
+                                    anchors {
+                                        fill: parent
+                                        margins: 12
+                                    }
+                                    spacing: 6
+
+                                    StyledText {
+                                        Layout.leftMargin: 8
+                                        text: SettingsSearch.results.length === 0
+                                            ? Translation.tr("No settings found for \"%1\"").arg(SettingsSearch.query)
+                                            : Translation.tr("%1 settings found").arg(SettingsSearch.results.length)
+                                        font.pixelSize: Appearance.font.pixelSize.small
+                                        color: Appearance.colors.colSubtext
+                                    }
+
+                                    ListView {
+                                        id: searchResultsList
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        clip: true
+                                        spacing: 2
+                                        model: SettingsSearch.results
+                                        keyNavigationWraps: true
+
+                                        Keys.onPressed: (event) => {
+                                            if (event.key === Qt.Key_Escape) {
+                                                root.clearSearch()
+                                                settingsSearchField.forceActiveFocus()
+                                                event.accepted = true
+                                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                                if (currentItem)
+                                                    root.navigateToSearchResult(SettingsSearch.results[currentIndex])
+                                                event.accepted = true
+                                            }
+                                        }
+
+                                        delegate: RippleButton {
+                                            id: searchResultButton
+                                            required property var modelData
+                                            required property int index
+                                            width: searchResultsList.width
+                                            implicitHeight: 54
+                                            buttonRadius: Appearance.rounding.small
+                                            colBackground: CF.ColorUtils.transparentize(Appearance.colors.colLayer1Hover, 1)
+                                            colBackgroundHover: Appearance.colors.colLayer1Hover
+                                            onClicked: root.navigateToSearchResult(modelData)
+
+                                            contentItem: RowLayout {
+                                                anchors {
+                                                    fill: parent
+                                                    leftMargin: 10
+                                                    rightMargin: 10
+                                                }
+                                                spacing: 12
+
+                                                MaterialSymbol {
+                                                    text: searchResultButton.modelData.sectionIcon !== ""
+                                                        ? searchResultButton.modelData.sectionIcon
+                                                        : searchResultButton.modelData.pageIcon
+                                                    iconSize: 22
+                                                    color: Appearance.colors.colPrimary
+                                                }
+
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: -1
+
+                                                    StyledText {
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
+                                                        text: searchResultButton.modelData.label
+                                                        font.pixelSize: Appearance.font.pixelSize.normal
+                                                        color: Appearance.colors.colOnLayer1
+                                                    }
+
+                                                    StyledText {
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
+                                                        text: searchResultButton.modelData.section !== ""
+                                                            ? `${searchResultButton.modelData.pageName} · ${searchResultButton.modelData.section}`
+                                                            : searchResultButton.modelData.pageName
+                                                        font.pixelSize: Appearance.font.pixelSize.smaller
+                                                        color: Appearance.colors.colSubtext
+                                                    }
+                                                }
+
+                                                MaterialSymbol {
+                                                    text: "chevron_right"
+                                                    iconSize: 18
+                                                    color: Appearance.colors.colSubtext
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Search index sources. Each page's QML file is read as text and
+    // parsed by SettingsSearch; the two Hyprland keybind files contribute
+    // their bind descriptions to the Keybinds page's entries.
+    Instantiator {
+        id: indexSources
+        model: root.pages
+        delegate: FileView {
+            required property var modelData
+            required property int index
+            path: root.pageFilePath(modelData.component)
+            onLoaded: SettingsSearch.indexPage(index, modelData.name, modelData.icon, text())
+        }
+    }
+
+    FileView {
+        id: keybindsMainView
+        path: CF.FileUtils.trimFileProtocol(Directories.config + "/hypr/hyprland/keybinds.lua")
+        onLoaded: root.refreshKeybindIndex()
+    }
+
+    FileView {
+        id: keybindsCustomView
+        path: CF.FileUtils.trimFileProtocol(Directories.config + "/hypr/custom/keybinds.lua")
+        onLoaded: root.refreshKeybindIndex()
+    }
+
+    // Page components are `qs:`-scheme URLs, which FileView cannot read;
+    // translate them back to real filesystem paths via Quickshell.shellPath.
+    function pageFilePath(component) {
+        const url = component.toString()
+        const prefix = "qs:@/qs/"
+        if (url.startsWith(prefix))
+            return CF.FileUtils.trimFileProtocol(Quickshell.shellPath(url.slice(prefix.length)))
+        return CF.FileUtils.trimFileProtocol(url)
+    }
+
+    function refreshKeybindIndex() {
+        for (let i = 0; i < pages.length; i++) {
+            if (pages[i].component.toString().endsWith("KeybindsConfig.qml")) {
+                SettingsSearch.indexKeybinds(i, pages[i].name, pages[i].icon,
+                    [keybindsMainView.text(), keybindsCustomView.text()])
+                return
             }
         }
     }
@@ -443,11 +820,24 @@ Scope {
         function close(): void {
             GlobalStates.settingsOpen = false
         }
+        function search(): void {
+            GlobalStates.settingsOpen = true
+            root.focusSearch()
+        }
     }
 
     GlobalShortcut {
         name: "settingsToggle"
         description: "Toggles settings panel"
         onPressed: GlobalStates.settingsOpen = !GlobalStates.settingsOpen
+    }
+
+    GlobalShortcut {
+        name: "settingsSearch"
+        description: "Opens settings with search focused"
+        onPressed: {
+            GlobalStates.settingsOpen = true
+            root.focusSearch()
+        }
     }
 }

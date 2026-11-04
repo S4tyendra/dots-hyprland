@@ -16,6 +16,14 @@ Singleton {
     property bool sloppySearch: Config.options?.search.sloppy ?? false
     property real scoreThreshold: 0.2
     property list<string> entries: []
+
+    // Pinned entries are copies of the decoded clipboard content, stored in
+    // Directories.cliphistPinsDir. They survive `cliphist wipe` and history
+    // pruning. Shape: { id, file, source, preview, isImage, width, height }
+    property var pins: []
+    property string pinsDir: Directories.cliphistPinsDir
+    property string pinsIndexPath: Directories.cliphistPinsIndex
+    property bool pinsLoaded: false
     readonly property var preparedEntries: entries.map(a => ({
         name: Fuzzy.prepare(`${a.replace(/^\s*\S+\s+/, "")}`),
         entry: a
@@ -45,6 +53,187 @@ Singleton {
     function entryIsImage(entry) {
         return !!(/^\d+\t\[\[.*binary data.*\d+x\d+.*\]\]$/.test(entry))
     }
+
+    function entryImageDimensions(entry) {
+        const match = entry?.match(/(\d+)x(\d+)/)
+        return match ? { width: parseInt(match[1]), height: parseInt(match[2]) } : { width: 0, height: 0 }
+    }
+
+    function entryPreview(entry) {
+        if (entryIsImage(entry)) {
+            const dims = entryImageDimensions(entry)
+            return dims.width > 0 ? `${Translation.tr("Image")} ${dims.width}x${dims.height}` : Translation.tr("Image")
+        }
+        return StringUtils.cleanCliphistEntry(entry)
+    }
+
+    function isPinned(entry) {
+        return root.pinForEntry(entry) !== null
+    }
+
+    function pinForEntry(entry) {
+        const preview = entryPreview(entry)
+        for (let i = 0; i < root.pins.length; i++) {
+            const pin = root.pins[i]
+            if (pin.source === entry || (!pin.isImage && pin.preview === preview))
+                return pin
+        }
+        return null
+    }
+
+    property int pinCounter: 0
+
+    function pin(entry) {
+        if (!entry || root.isPinned(entry))
+            return
+        // Date.now() alone can collide for pins made in the same millisecond
+        const id = `${Date.now()}-${root.pinCounter++}`
+        const dims = entryImageDimensions(entry)
+        pinProc.begin(entry, {
+            id: id,
+            file: `${root.pinsDir}/${id}`,
+            source: entry,
+            preview: root.entryPreview(entry),
+            isImage: root.entryIsImage(entry),
+            width: dims.width,
+            height: dims.height
+        })
+    }
+
+    function unpin(pin) {
+        if (!pin)
+            return
+        root.pins = root.pins.filter(item => item.id !== pin.id)
+        savePins()
+        root.deletePinFile(pin)
+    }
+
+    function savePins() {
+        if (!root.pinsLoaded)
+            return
+        pinsFileView.setText(JSON.stringify(root.pins))
+    }
+
+    function copyPin(pin) {
+        if (!pin)
+            return
+        Quickshell.execDetached(["bash", "-c", `cat '${StringUtils.shellSingleQuoteEscape(pin.file)}' | wl-copy`])
+    }
+
+    function deletePinFile(pin) {
+        Quickshell.execDetached(["bash", "-c", `rm -f '${StringUtils.shellSingleQuoteEscape(pin.file)}'`])
+    }
+
+    function addPin(data) {
+        // The same entry can be queued twice before the first decode
+        // finishes (pin() checks the finished list); don't store it twice.
+        if (root.pins.some(pin => pin.source === data.source
+                || (!pin.isImage && !data.isImage && pin.preview === data.preview))) {
+            root.deletePinFile(data)
+            return
+        }
+        const combined = root.pins.concat([data])
+        // Pins past the cap are evicted from the index; delete their files
+        // too, otherwise the pins directory leaks one file per eviction.
+        const dropped = combined.slice(0, Math.max(0, combined.length - 100))
+        root.pins = combined.slice(-100)
+        for (let i = 0; i < dropped.length; i++)
+            root.deletePinFile(dropped[i])
+        root.savePins()
+    }
+
+    function fuzzyQueryPinned(search: string): var {
+        if (search.trim() === "")
+            return root.pins
+        const prepared = root.pins.map(pin => ({
+            name: Fuzzy.prepare(`${pin.preview}`),
+            pin: pin
+        }))
+        if (root.sloppySearch) {
+            return root.pins.map(pin => ({
+                pin: pin,
+                score: Levendist.computeTextMatchScore(`${pin.preview}`.toLowerCase(), search.toLowerCase())
+            })).filter(item => item.score > root.scoreThreshold)
+                .sort((a, b) => b.score - a.score)
+                .map(item => item.pin)
+        }
+        return Fuzzy.go(search, prepared, {
+            all: true,
+            key: "name"
+        }).map(result => result.obj.pin)
+    }
+
+    Process {
+        id: pinProc
+        property var pinData: null
+        // Pins are decoded one at a time, in request order. A single shared
+        // process that is simply re-pointed at the newest request loses the
+        // earlier pin (its data is overwritten) and orphans its file.
+        property var queue: []
+        // Pins that finished decoding before the index file was loaded;
+        // merged into the list by the FileView handlers below so loading
+        // can't overwrite them.
+        property var earlyPins: []
+        function begin(entry, data) {
+            pinProc.queue = pinProc.queue.concat([{ entry: entry, data: data }])
+            pinProc.processNext()
+        }
+        function processNext() {
+            if (pinProc.running || pinProc.queue.length === 0)
+                return
+            const next = pinProc.queue[0]
+            pinProc.queue = pinProc.queue.slice(1)
+            pinProc.pinData = next.data
+            command = ["bash", "-c", `mkdir -p '${root.pinsDir}' && printf '%s' '${StringUtils.shellSingleQuoteEscape(next.entry)}' | ${root.cliphistBinary} decode > '${next.data.file}'`]
+            running = true
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0 && pinProc.pinData) {
+                if (root.pinsLoaded)
+                    root.addPin(pinProc.pinData)
+                else
+                    pinProc.earlyPins = pinProc.earlyPins.concat([pinProc.pinData])
+            } else {
+                console.error("[Cliphist] Failed to pin entry with code", exitCode, "and status", exitStatus)
+            }
+            pinProc.pinData = null
+            pinProc.processNext()
+        }
+    }
+
+    function flushEarlyPins() {
+        const early = pinProc.earlyPins
+        pinProc.earlyPins = []
+        for (let i = 0; i < early.length; i++) {
+            if (!root.pins.some(pin => pin.id === early[i].id))
+                root.addPin(early[i])
+        }
+    }
+
+    FileView {
+        id: pinsFileView
+        path: Qt.resolvedUrl(root.pinsIndexPath)
+        onLoaded: {
+            try {
+                const parsed = JSON.parse(pinsFileView.text())
+                root.pins = Array.isArray(parsed) ? parsed : []
+            } catch (e) {
+                console.error("[Cliphist] Failed to parse pinned entries:", e)
+                root.pins = []
+            }
+            root.pinsLoaded = true
+            root.flushEarlyPins()
+        }
+        onLoadFailed: (error) => {
+            if (error !== FileViewError.FileNotFound)
+                console.error("[Cliphist] Failed to load pinned entries:", error)
+            root.pins = []
+            root.pinsLoaded = true
+            root.flushEarlyPins()
+        }
+    }
+
+    Component.onCompleted: pinsFileView.reload()
 
     function refresh() {
         readProc.buffer = []

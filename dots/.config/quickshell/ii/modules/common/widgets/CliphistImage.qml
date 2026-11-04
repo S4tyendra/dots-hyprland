@@ -10,6 +10,10 @@ import Quickshell.Io
 Rectangle {
     id: root
     property string entry
+    // When set, use this already-decoded file instead of decoding `entry`
+    property string imageFile: ""
+    property int knownWidth: 0
+    property int knownHeight: 0
     property real maxWidth
     property real maxHeight
     property bool blur: false
@@ -27,12 +31,16 @@ Rectangle {
         return match ? parseInt(match[1]) : 0;
     }
     property int imageWidth: {
+        if (root.knownWidth > 0)
+            return root.knownWidth;
         if (!root.entry)
             return 0;
         const match = root.entry.match(/(\d+)x(\d+)/);
         return match ? parseInt(match[1]) : 0;
     }
     property int imageHeight: {
+        if (root.knownHeight > 0)
+            return root.knownHeight;
         if (!root.entry)
             return 0;
         const match = root.entry.match(/(\d+)x(\d+)/);
@@ -48,7 +56,15 @@ Rectangle {
     implicitWidth: imageWidth * scale
 
     Component.onCompleted: {
-        decodeImageProcess.running = true;
+        if (root.imageFile !== "")
+            root.source = root.imageFile;
+        else
+            decodeImageProcess.running = true;
+    }
+
+    onImageFileChanged: {
+        if (root.imageFile !== "")
+            root.source = root.imageFile;
     }
 
     Process {
@@ -65,7 +81,8 @@ Rectangle {
     }
 
     Component.onDestruction: {
-        Quickshell.execDetached(["bash", "-c", `[ -f '${imageDecodeFilePath}' ] && rm -f '${imageDecodeFilePath}'`]);
+        if (root.imageFile === "")
+            Quickshell.execDetached(["bash", "-c", `[ -f '${imageDecodeFilePath}' ] && rm -f '${imageDecodeFilePath}'`]);
     }
 
     layer.enabled: true
