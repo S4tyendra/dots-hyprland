@@ -12,7 +12,7 @@ ContentPage {
     ContentSection {
         icon: "box"
         title: Translation.tr("Distro")
-        
+
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
             spacing: 20
@@ -23,13 +23,20 @@ ContentPage {
                 source: Quickshell.iconPath(SystemInfo.logo)
             }
             ColumnLayout {
+            Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 // spacing: 10
                 StyledText {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                horizontalAlignment: Text.AlignHCenter
                     text: SystemInfo.distroName
                     font.pixelSize: Appearance.font.pixelSize.title
                 }
                 StyledText {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                horizontalAlignment: Text.AlignHCenter
                     font.pixelSize: Appearance.font.pixelSize.normal
                     text: SystemInfo.homeUrl
                     textFormat: Text.MarkdownText
@@ -74,7 +81,7 @@ ContentPage {
                     Qt.openUrlExternally(SystemInfo.privacyPolicyUrl)
                 }
             }
-            
+
         }
 
     }
@@ -92,13 +99,20 @@ ContentPage {
                 source: Quickshell.iconPath("illogical-impulse")
             }
             ColumnLayout {
+            Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 // spacing: 10
                 StyledText {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                horizontalAlignment: Text.AlignHCenter
                     text: Translation.tr("illogical-impulse")
                     font.pixelSize: Appearance.font.pixelSize.title
                 }
                 StyledText {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                horizontalAlignment: Text.AlignHCenter
                     text: "https://github.com/end-4/dots-hyprland"
                     font.pixelSize: Appearance.font.pixelSize.normal
                     textFormat: Text.MarkdownText
@@ -144,7 +158,7 @@ ContentPage {
                 }
             }
 
-            
+
         }
     }
 }

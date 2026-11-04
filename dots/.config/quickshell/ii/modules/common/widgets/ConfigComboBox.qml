@@ -21,6 +21,7 @@ RowLayout {
     signal selected(var newValue)
 
     spacing: 10
+    Layout.fillWidth: true
     Layout.leftMargin: 8
     Layout.rightMargin: 8
 
@@ -32,10 +33,12 @@ RowLayout {
 
     ColumnLayout {
         Layout.fillWidth: true
+        Layout.minimumWidth: 0
         spacing: 0
         StyledText {
             Layout.fillWidth: true
             text: root.text
+            wrapMode: Text.Wrap
             color: Appearance.colors.colOnSecondaryContainer
             opacity: root.enabled ? 1 : 0.4
         }
@@ -52,7 +55,10 @@ RowLayout {
 
     StyledComboBox {
         id: comboBox
+        Layout.fillWidth: true
+        Layout.minimumWidth: Math.min(120, root.fieldWidth)
         Layout.preferredWidth: root.fieldWidth
+        Layout.maximumWidth: root.fieldWidth
         Layout.alignment: Qt.AlignVCenter
         enabled: root.enabled
         textRole: root.textRole

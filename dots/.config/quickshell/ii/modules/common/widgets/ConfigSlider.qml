@@ -7,6 +7,7 @@ import qs.services
 RowLayout {
     id: root
     spacing: 10
+    Layout.fillWidth: true
     Layout.leftMargin: 8
     Layout.rightMargin: 8
 
@@ -34,12 +35,15 @@ RowLayout {
             id: labelWidget
             Layout.preferredWidth: root.textWidth
             text: root.text
+            wrapMode: Text.Wrap
             color: Appearance.colors.colOnSecondaryContainer
         }
     }
     
     StyledSlider {
         id: slider
+        Layout.fillWidth: true
+        Layout.minimumWidth: 80
         configuration: StyledSlider.Configuration.XS
         usePercentTooltip: root.usePercentTooltip
         value: root.value

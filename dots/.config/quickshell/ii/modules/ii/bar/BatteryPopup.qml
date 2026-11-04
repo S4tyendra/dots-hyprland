@@ -149,6 +149,30 @@ StyledPopup {
             }
         }
 
+        ColumnLayout {
+            visible: PeripheralBattery.indicators.length > 0
+            Layout.fillWidth: true
+            spacing: 6
+            StyledText {
+                text: Translation.tr("Peripheral batteries")
+                font.bold: true
+            }
+            Repeater {
+                model: PeripheralBattery.indicators
+                RowLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    MaterialSymbol { text: modelData.icon; iconSize: 18 }
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: modelData.name
+                        elide: Text.ElideRight
+                    }
+                    StyledText { text: Math.round(modelData.percentage * 100) + "%" }
+                }
+            }
+        }
+
         // Power profile selection
         RowLayout {
             Layout.fillWidth: true

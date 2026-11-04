@@ -14,7 +14,10 @@ ColumnLayout {
     spacing: 2
 
     RowLayout {
+        Layout.fillWidth: true
         ContentSubsectionLabel {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
             visible: root.title && root.title.length > 0
             text: root.title
         }
@@ -36,7 +39,6 @@ ColumnLayout {
                 }
             }
         }
-        Item { Layout.fillWidth: true }
     }
     ColumnLayout {
         id: sectionContent

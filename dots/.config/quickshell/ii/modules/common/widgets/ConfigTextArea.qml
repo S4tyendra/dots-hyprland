@@ -4,7 +4,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 
-RowLayout {
+GridLayout {
     id: root
 
     property string text: ""
@@ -18,6 +18,7 @@ RowLayout {
     property bool rounded: false
     property real fieldWidth: 220
     property real fieldHeight: 40
+    readonly property bool stacked: root.fieldHeight > 64 || root.width < 420
     property color colBackground: filled ? Appearance.colors.colLayer1 : "transparent"
     property color colBackgroundFocused: filled ? Appearance.colors.colLayer2 : "transparent"
     property color colBorder: Appearance.colors.colOutlineVariant
@@ -33,41 +34,54 @@ RowLayout {
     property color colConfirmBackgroundHover: Appearance.colors.colPrimaryContainerHover
     property color colConfirmBackgroundActive: Appearance.colors.colPrimaryContainerActive
     property color colOnConfirmBackground: Appearance.colors.colOnPrimaryContainer
-    signal confirmClicked()
+    signal confirmClicked
 
-    spacing: 10
+    columns: root.stacked ? 1 : (root.confirmButtonVisible ? 3 : 2)
+    columnSpacing: 12
+    rowSpacing: 8
+    Layout.fillWidth: true
     Layout.leftMargin: 8
     Layout.rightMargin: 8
 
-    OptionalMaterialSymbol {
-        icon: root.buttonIcon
-        iconSize: Appearance.font.pixelSize.larger
-        opacity: root.enabled ? 1 : 0.4
-    }
-
-    ColumnLayout {
+    RowLayout {
         Layout.fillWidth: true
-        spacing: 0
-        StyledText {
-            Layout.fillWidth: true
-            text: root.text
-            color: root.colLabel
+        Layout.minimumWidth: 0
+        spacing: 10
+        OptionalMaterialSymbol {
+            icon: root.buttonIcon
+            iconSize: Appearance.font.pixelSize.larger
             opacity: root.enabled ? 1 : 0.4
         }
-        StyledText {
+
+        ColumnLayout {
             Layout.fillWidth: true
-            visible: root.description.length > 0
-            text: root.description
-            font.pixelSize: Appearance.font.pixelSize.smaller
-            color: Appearance.colors.colSubtext
-            wrapMode: Text.Wrap
-            opacity: root.enabled ? 1 : 0.4
+            Layout.minimumWidth: 0
+            spacing: 0
+            StyledText {
+                Layout.fillWidth: true
+                text: root.text
+                wrapMode: Text.Wrap
+                color: root.colLabel
+                opacity: root.enabled ? 1 : 0.4
+            }
+            StyledText {
+                Layout.fillWidth: true
+                visible: root.description.length > 0
+                text: root.description
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                color: Appearance.colors.colSubtext
+                wrapMode: Text.Wrap
+                opacity: root.enabled ? 1 : 0.4
+            }
         }
     }
 
     Rectangle {
         id: fieldBg
-        Layout.preferredWidth: root.fieldWidth
+        Layout.fillWidth: true
+        Layout.minimumWidth: Math.min(120, root.fieldWidth)
+        Layout.preferredWidth: root.stacked ? 0 : root.fieldWidth
+        Layout.maximumWidth: root.stacked ? Infinity : root.fieldWidth
         Layout.preferredHeight: root.fieldHeight
         Layout.alignment: Qt.AlignVCenter
         radius: root.cornerRadius
@@ -77,13 +91,19 @@ RowLayout {
         border.color: textArea.activeFocus ? root.colBorderFocused : root.colBorder
 
         Behavior on color {
-            ColorAnimation { duration: Appearance.animation.elementMoveFast.duration }
+            ColorAnimation {
+                duration: Appearance.animation.elementMoveFast.duration
+            }
         }
         Behavior on border.color {
-            ColorAnimation { duration: Appearance.animation.elementMoveFast.duration }
+            ColorAnimation {
+                duration: Appearance.animation.elementMoveFast.duration
+            }
         }
         Behavior on border.width {
-            NumberAnimation { duration: Appearance.animation.elementMoveFast.duration }
+            NumberAnimation {
+                duration: Appearance.animation.elementMoveFast.duration
+            }
         }
 
         HoverHandler {
@@ -97,7 +117,7 @@ RowLayout {
             anchors.rightMargin: 12
             enabled: root.enabled
             wrapMode: TextArea.Wrap
-            verticalAlignment: TextEdit.AlignVCenter
+            verticalAlignment: root.fieldHeight > 64 ? TextEdit.AlignTop : TextEdit.AlignVCenter
             selectByMouse: true
             placeholderTextColor: Appearance.colors.colSubtext
             color: root.colOnBackground
@@ -122,12 +142,14 @@ RowLayout {
         Layout.preferredHeight: 40
         Layout.alignment: Qt.AlignVCenter
         radius: Appearance.rounding.small
-        color: confirmMouseArea.pressed
-            ? root.colConfirmBackgroundActive
-            : (confirmMouseArea.containsMouse ? root.colConfirmBackgroundHover : root.colConfirmBackground)
+        color: confirmMouseArea.pressed ? root.colConfirmBackgroundActive : (confirmMouseArea.containsMouse
+                                                                             ? root.colConfirmBackgroundHover :
+                                                                               root.colConfirmBackground)
 
         Behavior on color {
-            ColorAnimation { duration: Appearance.animation.elementMoveFast.duration }
+            ColorAnimation {
+                duration: Appearance.animation.elementMoveFast.duration
+            }
         }
 
         MaterialSymbol {

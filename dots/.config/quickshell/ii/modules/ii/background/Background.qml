@@ -97,7 +97,7 @@ Scope {
             property string previousWallpaperSource: ""
             property real transitionProgress: 1.0
 
-            property bool wallpaperIsVideo: resolvedPath.endsWith(".mp4") || resolvedPath.endsWith(".webm") || resolvedPath.endsWith(".mkv") || resolvedPath.endsWith(".avi") || resolvedPath.endsWith(".mov")
+            property bool wallpaperIsVideo: LiveWallpaper.isVideo(resolvedPath)
             property var wallpaperData: WallpaperListener.effectivePerMonitor[monitor.name] || {
                 path: Config.options.background.wallpaperPath,
                 workspaceFirst: 1,
@@ -106,7 +106,7 @@ Scope {
             property string resolvedPath: wallpaperData.path || Config.options.background.wallpaperPath
             property int wallpaperFirstWorkspace: wallpaperData.workspaceFirst || 1
             property int wallpaperLastWorkspace: wallpaperData.workspaceLast || 10
-            property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : resolvedPath
+            property string wallpaperPath: LiveWallpaper.previewPath(resolvedPath)
             property bool wallpaperSafetyTriggered: {
                 const enabled = Config.options.workSafety.enable.wallpaper;
                 const sensitiveWallpaper = (CF.StringUtils.stringListContainsSubstring(wallpaperPath.toLowerCase(), Config.options.workSafety.triggerCondition.fileKeywords));
@@ -117,7 +117,7 @@ Scope {
             onWallpaperPathChanged: {
                 bgRoot.updateZoomScale();
 
-                if (bgRoot.wallpaperAnimation === "" || bgRoot.wallpaperSafetyTriggered) {
+                if (bgRoot.wallpaperAnimation === "" || bgRoot.wallpaperSafetyTriggered || bgRoot.wallpaperIsVideo) {
                     wallpaper.source = wallpaperPath;
                     bgRoot.currentWallpaperSource = wallpaperPath;
                     bgRoot.transitionProgress = 1.0;
@@ -196,7 +196,7 @@ Scope {
                 right: true
             }
             color: {
-                if (!bgRoot.wallpaperSafetyTriggered || bgRoot.wallpaperIsVideo)
+                if (!bgRoot.wallpaperSafetyTriggered)
                     return "transparent";
                 return CF.ColorUtils.mix(Appearance.colors.colLayer0, Appearance.colors.colPrimary, 0.75);
             }
@@ -253,7 +253,7 @@ Scope {
                     // Only allocate GPU layer when transition is running
                     layer.enabled: transitionAnim.running
                     visible: (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0) && opacity > 0
-                    opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo) ? 1 : 0
+                    opacity: (status === Image.Ready && (!bgRoot.wallpaperIsVideo || GlobalStates.screenLocked || LiveWallpaper.error !== "")) ? 1 : 0
                     cache: false
                     smooth: false
                     // Use per-monitor workspace range if multiMonitor is enabled, otherwise use dynamic global range
@@ -406,7 +406,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.weather.enable
+                        shown: Config.options.background.widgets.weather.enable && DesktopWidgets.showOn("weather", bgRoot.monitor?.name ?? "")
                         sourceComponent: WeatherWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -417,7 +417,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.clock.enable
+                        shown: Config.options.background.widgets.clock.enable && DesktopWidgets.showOn("clock", bgRoot.monitor?.name ?? "")
                         sourceComponent: ClockWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -429,7 +429,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.media?.enable ?? false
+                        shown: Config.options.background.widgets.media.enable && DesktopWidgets.showOn("media", bgRoot.monitor?.name ?? "")
                         sourceComponent: MediaWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -440,7 +440,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.resources?.enable ?? false
+                        shown: Config.options.background.widgets.resources.enable && DesktopWidgets.showOn("resources", bgRoot.monitor?.name ?? "")
                         sourceComponent: ResourcesWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -451,7 +451,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.userCard?.enable ?? false
+                        shown: Config.options.background.widgets.userCard.enable && DesktopWidgets.showOn("userCard", bgRoot.monitor?.name ?? "")
                         sourceComponent: UserCardWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -462,7 +462,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.calendar?.enable ?? false
+                        shown: Config.options.background.widgets.calendar.enable && DesktopWidgets.showOn("calendar", bgRoot.monitor?.name ?? "")
                         sourceComponent: CalendarWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -473,7 +473,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.customImage?.enable ?? false
+                        shown: Config.options.background.widgets.customImage.enable && DesktopWidgets.showOn("customImage", bgRoot.monitor?.name ?? "")
                         sourceComponent: CustomImage {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -484,7 +484,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.images?.enable ?? false
+                        shown: Config.options.background.widgets.images.enable && DesktopWidgets.showOn("images", bgRoot.monitor?.name ?? "")
                         sourceComponent: ImageConverterWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -495,7 +495,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.worldClock?.enable ?? false
+                        shown: Config.options.background.widgets.worldClock.enable && DesktopWidgets.showOn("worldClock", bgRoot.monitor?.name ?? "")
                         sourceComponent: WorldClockWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -518,7 +518,7 @@ Scope {
                     height: Config.options.background.widgets.visualizer.height
 
                     readonly property var vizConfig: Config?.options?.background?.widgets?.visualizer
-                    shown: vizConfig?.enable && (!GlobalStates.screenLocked || vizConfig?.showWhenLocked)
+                    shown: vizConfig?.enable && DesktopWidgets.showOn("visualizer", bgRoot.monitor?.name ?? "") && (!GlobalStates.screenLocked || vizConfig?.showWhenLocked)
 
                     sourceComponent: VisualizerWidget {
                         anchors.fill: parent

@@ -14,88 +14,93 @@ ContentPage {
         ContentSubsection {
             title: Translation.tr("Super key symbol")
             tooltip: Translation.tr("You can also manually edit cheatsheet.superKey")
-            ConfigSelectionArray {
-                currentValue: Config.options.cheatsheet.superKey
-                onSelected: newValue => {
-                    Config.options.cheatsheet.superKey = newValue;
+            GroupedList {
+                ConfigSelectionArray {
+                    text: Translation.tr("Symbol")
+                    currentValue: Config.options.cheatsheet.superKey
+                    onSelected: newValue => {
+                        Config.options.cheatsheet.superKey = newValue;
+                    }
+                    // Use a nerdfont to see the icons
+                    options: (["󰖳", "", "󰨡", "", "󰌽", "󰣇", "", "", "", "", "", "󱄛", "", "", "",
+                               "⌘", "󰀲", "󰟍", ""]).map(icon => {
+                                   return {
+                                       displayName: icon,
+                                       value: icon
+                                   };
+                               })
                 }
-                // Use a nerdfont to see the icons
-                options: ([
-                  "󰖳", "", "󰨡", "", "󰌽", "󰣇", "", "", "", 
-                  "", "", "󱄛", "", "", "", "⌘", "󰀲", "󰟍", ""
-                ]).map(icon => { return {
-                  displayName: icon,
-                  value: icon
-                  }
-                })
             }
         }
 
-        ConfigSwitch {
-            buttonIcon: "󰘵"
-            text: Translation.tr("Use macOS-like symbols for mods keys")
-            checked: Config.options.cheatsheet.useMacSymbol
-            onCheckedChanged: {
-                Config.options.cheatsheet.useMacSymbol = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("e.g. 󰘴  for Ctrl, 󰘵  for Alt, 󰘶  for Shift, etc")
-            }
-        }
-
-        ConfigSwitch {
-            buttonIcon: "󱊶"
-            text: Translation.tr("Use symbols for function keys")
-            checked: Config.options.cheatsheet.useFnSymbol
-            onCheckedChanged: {
-                Config.options.cheatsheet.useFnSymbol = checked;
-            }
-            StyledToolTip {
-              text: Translation.tr("e.g. 󱊫 for F1, 󱊶  for F12")
-            }
-        }
-        ConfigSwitch {
-            buttonIcon: "󰍽"
-            text: Translation.tr("Use symbols for mouse")
-            checked: Config.options.cheatsheet.useMouseSymbol
-            onCheckedChanged: {
-                Config.options.cheatsheet.useMouseSymbol = checked;
-            }
-            StyledToolTip {
-              text: Translation.tr("Replace 󱕐   for \"Scroll ↓\", 󱕑   \"Scroll ↑\", L󰍽   \"LMB\", R󰍽   \"RMB\", 󱕒   \"Scroll ↑/↓\" and ⇞/⇟ for \"Page_↑/↓\"")
-            }
-        }
-        ConfigSwitch {
-            buttonIcon: "highlight_keyboard_focus"
-            text: Translation.tr("Split buttons")
-            checked: Config.options.cheatsheet.splitButtons
-            onCheckedChanged: {
-                Config.options.cheatsheet.splitButtons = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Display modifiers and keys in multiple keycap (e.g., \"Ctrl + A\" instead of \"Ctrl A\" or \"󰘴 + A\" instead of \"󰘴 A\")")
+        GroupedList {
+            ConfigSwitch {
+                buttonIcon: "󰘵"
+                text: Translation.tr("Use macOS-like symbols for mods keys")
+                checked: Config.options.cheatsheet.useMacSymbol
+                onCheckedChanged: {
+                    Config.options.cheatsheet.useMacSymbol = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr("e.g. 󰘴  for Ctrl, 󰘵  for Alt, 󰘶  for Shift, etc")
+                }
             }
 
-        }
-
-        ConfigSpinBox {
-            text: Translation.tr("Keybind font size")
-            value: Config.options.cheatsheet.fontSize.key
-            from: 8
-            to: 30
-            stepSize: 1
-            onValueChanged: {
-                Config.options.cheatsheet.fontSize.key = value;
+            ConfigSwitch {
+                buttonIcon: "󱊶"
+                text: Translation.tr("Use symbols for function keys")
+                checked: Config.options.cheatsheet.useFnSymbol
+                onCheckedChanged: {
+                    Config.options.cheatsheet.useFnSymbol = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr("e.g. 󱊫 for F1, 󱊶  for F12")
+                }
             }
-        }
-        ConfigSpinBox {
-            text: Translation.tr("Description font size")
-            value: Config.options.cheatsheet.fontSize.comment
-            from: 8
-            to: 30
-            stepSize: 1
-            onValueChanged: {
-                Config.options.cheatsheet.fontSize.comment = value;
+            ConfigSwitch {
+                buttonIcon: "󰍽"
+                text: Translation.tr("Use symbols for mouse")
+                checked: Config.options.cheatsheet.useMouseSymbol
+                onCheckedChanged: {
+                    Config.options.cheatsheet.useMouseSymbol = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr(
+                              "Replace 󱕐   for \"Scroll ↓\", 󱕑   \"Scroll ↑\", L󰍽   \"LMB\", R󰍽   \"RMB\", 󱕒   \"Scroll ↑/↓\" and ⇞/⇟ for \"Page_↑/↓\"")
+                }
+            }
+            ConfigSwitch {
+                buttonIcon: "highlight_keyboard_focus"
+                text: Translation.tr("Split buttons")
+                checked: Config.options.cheatsheet.splitButtons
+                onCheckedChanged: {
+                    Config.options.cheatsheet.splitButtons = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr(
+                              "Display modifiers and keys in multiple keycap (e.g., \"Ctrl + A\" instead of \"Ctrl A\" or \"󰘴 + A\" instead of \"󰘴 A\")")
+                }
+            }
+
+            ConfigSpinBox {
+                text: Translation.tr("Keybind font size")
+                value: Config.options.cheatsheet.fontSize.key
+                from: 8
+                to: 30
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.cheatsheet.fontSize.key = value;
+                }
+            }
+            ConfigSpinBox {
+                text: Translation.tr("Description font size")
+                value: Config.options.cheatsheet.fontSize.comment
+                from: 8
+                to: 30
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.cheatsheet.fontSize.comment = value;
+                }
             }
         }
     }
@@ -103,17 +108,16 @@ ContentPage {
         icon: "call_to_action"
         title: Translation.tr("Dock")
 
-        ConfigSwitch {
-            buttonIcon: "check"
-            text: Translation.tr("Enable")
-            checked: Config.options.dock.enable
-            onCheckedChanged: {
-                Config.options.dock.enable = checked;
+        GroupedList {
+            ConfigSwitch {
+                buttonIcon: "check"
+                text: Translation.tr("Enable")
+                checked: Config.options.dock.enable
+                onCheckedChanged: {
+                    Config.options.dock.enable = checked;
+                }
             }
-        }
 
-        ConfigRow {
-            uniform: true
             ConfigSwitch {
                 buttonIcon: "highlight_mouse_cursor"
                 text: Translation.tr("Hover to reveal")
@@ -130,13 +134,13 @@ ContentPage {
                     Config.options.dock.pinnedOnStartup = checked;
                 }
             }
-        }
-        ConfigSwitch {
-            buttonIcon: "colors"
-            text: Translation.tr("Tint app icons")
-            checked: Config.options.dock.monochromeIcons
-            onCheckedChanged: {
-                Config.options.dock.monochromeIcons = checked;
+            ConfigSwitch {
+                buttonIcon: "colors"
+                text: Translation.tr("Tint app icons")
+                checked: Config.options.dock.monochromeIcons
+                onCheckedChanged: {
+                    Config.options.dock.monochromeIcons = checked;
+                }
             }
         }
     }
@@ -145,51 +149,57 @@ ContentPage {
         icon: "lock"
         title: Translation.tr("Lock screen")
 
-        ConfigSwitch {
-            buttonIcon: "water_drop"
-            text: Translation.tr('Use Hyprlock (instead of Quickshell)')
-            checked: Config.options.lock.useHyprlock
-            onCheckedChanged: {
-                Config.options.lock.useHyprlock = checked;
+        GroupedList {
+            ConfigSwitch {
+                buttonIcon: "water_drop"
+                text: Translation.tr('Use Hyprlock (instead of Quickshell)')
+                checked: Config.options.lock.useHyprlock
+                onCheckedChanged: {
+                    Config.options.lock.useHyprlock = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr("If you want to somehow use fingerprint unlock...")
+                }
             }
-            StyledToolTip {
-                text: Translation.tr("If you want to somehow use fingerprint unlock...")
-            }
-        }
 
-        ConfigSwitch {
-            buttonIcon: "account_circle"
-            text: Translation.tr('Launch on startup')
-            checked: Config.options.lock.launchOnStartup
-            onCheckedChanged: {
-                Config.options.lock.launchOnStartup = checked;
+            ConfigSwitch {
+                buttonIcon: "account_circle"
+                text: Translation.tr('Launch on startup')
+                checked: Config.options.lock.launchOnStartup
+                onCheckedChanged: {
+                    Config.options.lock.launchOnStartup = checked;
+                }
             }
         }
 
         ContentSubsection {
             title: Translation.tr("Security")
 
-            ConfigSwitch {
-                buttonIcon: "settings_power"
-                text: Translation.tr('Require password to power off/restart')
-                checked: Config.options.lock.security.requirePasswordToPower
-                onCheckedChanged: {
-                    Config.options.lock.security.requirePasswordToPower = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "settings_power"
+                    text: Translation.tr('Require password to power off/restart')
+                    checked: Config.options.lock.security.requirePasswordToPower
+                    onCheckedChanged: {
+                        Config.options.lock.security.requirePasswordToPower = checked;
+                    }
+                    StyledToolTip {
+                        text: Translation.tr(
+                                  "Remember that on most devices one can always hold the power button to force shutdown\nThis only makes it a tiny bit harder for accidents to happen")
+                    }
                 }
-                StyledToolTip {
-                    text: Translation.tr("Remember that on most devices one can always hold the power button to force shutdown\nThis only makes it a tiny bit harder for accidents to happen")
-                }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "key_vertical"
-                text: Translation.tr('Also unlock keyring')
-                checked: Config.options.lock.security.unlockKeyring
-                onCheckedChanged: {
-                    Config.options.lock.security.unlockKeyring = checked;
-                }
-                StyledToolTip {
-                    text: Translation.tr("This is usually safe and needed for your browser and AI sidebar anyway\nMostly useful for those who use lock on startup instead of a display manager that does it (GDM, SDDM, etc.)")
+                ConfigSwitch {
+                    buttonIcon: "key_vertical"
+                    text: Translation.tr('Also unlock keyring')
+                    checked: Config.options.lock.security.unlockKeyring
+                    onCheckedChanged: {
+                        Config.options.lock.security.unlockKeyring = checked;
+                    }
+                    StyledToolTip {
+                        text: Translation.tr(
+                                  "This is usually safe and needed for your browser and AI sidebar anyway\nMostly useful for those who use lock on startup instead of a display manager that does it (GDM, SDDM, etc.)")
+                    }
                 }
             }
         }
@@ -197,54 +207,58 @@ ContentPage {
         ContentSubsection {
             title: Translation.tr("Style: general")
 
-            ConfigSwitch {
-                buttonIcon: "center_focus_weak"
-                text: Translation.tr('Center clock')
-                checked: Config.options.lock.centerClock
-                onCheckedChanged: {
-                    Config.options.lock.centerClock = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "center_focus_weak"
+                    text: Translation.tr('Center clock')
+                    checked: Config.options.lock.centerClock
+                    onCheckedChanged: {
+                        Config.options.lock.centerClock = checked;
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "info"
-                text: Translation.tr('Show "Locked" text')
-                checked: Config.options.lock.showLockedText
-                onCheckedChanged: {
-                    Config.options.lock.showLockedText = checked;
+                ConfigSwitch {
+                    buttonIcon: "info"
+                    text: Translation.tr('Show "Locked" text')
+                    checked: Config.options.lock.showLockedText
+                    onCheckedChanged: {
+                        Config.options.lock.showLockedText = checked;
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "shapes"
-                text: Translation.tr('Use varying shapes for password characters')
-                checked: Config.options.lock.materialShapeChars
-                onCheckedChanged: {
-                    Config.options.lock.materialShapeChars = checked;
+                ConfigSwitch {
+                    buttonIcon: "shapes"
+                    text: Translation.tr('Use varying shapes for password characters')
+                    checked: Config.options.lock.materialShapeChars
+                    onCheckedChanged: {
+                        Config.options.lock.materialShapeChars = checked;
+                    }
                 }
             }
         }
         ContentSubsection {
             title: Translation.tr("Style: Blurred")
 
-            ConfigSwitch {
-                buttonIcon: "blur_on"
-                text: Translation.tr('Enable blur')
-                checked: Config.options.lock.blur.enable
-                onCheckedChanged: {
-                    Config.options.lock.blur.enable = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "blur_on"
+                    text: Translation.tr('Enable blur')
+                    checked: Config.options.lock.blur.enable
+                    onCheckedChanged: {
+                        Config.options.lock.blur.enable = checked;
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "loupe"
-                text: Translation.tr("Extra wallpaper zoom (%)")
-                value: Config.options.lock.blur.extraZoom * 100
-                from: 1
-                to: 150
-                stepSize: 2
-                onValueChanged: {
-                    Config.options.lock.blur.extraZoom = value / 100;
+                ConfigSpinBox {
+                    icon: "loupe"
+                    text: Translation.tr("Extra wallpaper zoom (%)")
+                    value: Config.options.lock.blur.extraZoom * 100
+                    from: 1
+                    to: 150
+                    stepSize: 2
+                    onValueChanged: {
+                        Config.options.lock.blur.extraZoom = value / 100;
+                    }
                 }
             }
         }
@@ -254,39 +268,45 @@ ContentPage {
         icon: "notifications"
         title: Translation.tr("Notifications")
 
-        ConfigSpinBox {
-            icon: "av_timer"
-            text: Translation.tr("Timeout duration (if not defined by notification) (ms)")
-            value: Config.options.notifications.timeout
-            from: 1000
-            to: 60000
-            stepSize: 1000
-            onValueChanged: {
-                Config.options.notifications.timeout = value;
+        GroupedList {
+            ConfigSpinBox {
+                icon: "av_timer"
+                text: Translation.tr("Timeout duration (if not defined by notification) (ms)")
+                value: Config.options.notifications.timeout
+                from: 1000
+                to: 60000
+                stepSize: 1000
+                onValueChanged: {
+                    Config.options.notifications.timeout = value;
+                }
             }
-        }
 
-        ConfigSwitch {
-            buttonIcon: "monitor"
-            text: Translation.tr("Force specific monitor")
-            checked: Config.options.notifications.forceMonitor.enable
-            onCheckedChanged: {
-                Config.options.notifications.forceMonitor.enable = checked;
+            ConfigSwitch {
+                buttonIcon: "monitor"
+                text: Translation.tr("Force specific monitor")
+                checked: Config.options.notifications.monitor.enable
+                onCheckedChanged: {
+                    Config.options.notifications.monitor.enable = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr(
+                              "If you have multiple monitors and want notifications to only show on one of them, enable this and enter the monitor name below (e.g., eDP-1)")
+                }
             }
-            StyledToolTip {
-                text: Translation.tr("If you have multiple monitors and want notifications to only show on one of them, enable this and enter the monitor name below (e.g., eDP-1)")
-            }
-        }
 
-        ConfigRow {
-            enabled: Config.options.notifications.forceMonitor.enable
-            MaterialTextArea {
+            ColumnLayout {
                 Layout.fillWidth: true
-                placeholderText: Translation.tr("Monitor name to show notifications on (e.g., eDP-1)")
-                text: Config.options.notifications.forceMonitor.name
-                wrapMode: TextEdit.Wrap
-                onTextChanged: {
-                    Config.options.notifications.forceMonitor.name = text;
+                spacing: 8
+                enabled: Config.options.notifications.monitor.enable
+                ConfigTextArea {
+                    text: Translation.tr("Monitor name")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Monitor name to show notifications on (e.g., eDP-1)")
+                    value: Config.options.notifications.monitor.name
+                    textArea.wrapMode: TextEdit.Wrap
+                    onValueChanged: {
+                        Config.options.notifications.monitor.name = value;
+                    }
                 }
             }
         }
@@ -296,20 +316,22 @@ ContentPage {
         icon: "select_window"
         title: Translation.tr("Overlay: General")
 
-        ConfigSwitch {
-            buttonIcon: "high_density"
-            text: Translation.tr("Enable opening zoom animation")
-            checked: Config.options.overlay.openingZoomAnimation
-            onCheckedChanged: {
-                Config.options.overlay.openingZoomAnimation = checked;
+        GroupedList {
+            ConfigSwitch {
+                buttonIcon: "high_density"
+                text: Translation.tr("Enable opening zoom animation")
+                checked: Config.options.overlay.openingZoomAnimation
+                onCheckedChanged: {
+                    Config.options.overlay.openingZoomAnimation = checked;
+                }
             }
-        }
-        ConfigSwitch {
-            buttonIcon: "texture"
-            text: Translation.tr("Darken screen")
-            checked: Config.options.overlay.darkenScreen
-            onCheckedChanged: {
-                Config.options.overlay.darkenScreen = checked;
+            ConfigSwitch {
+                buttonIcon: "texture"
+                text: Translation.tr("Darken screen")
+                checked: Config.options.overlay.darkenScreen
+                onCheckedChanged: {
+                    Config.options.overlay.darkenScreen = checked;
+                }
             }
         }
     }
@@ -318,36 +340,41 @@ ContentPage {
         icon: "point_scan"
         title: Translation.tr("Overlay: Crosshair")
 
-        MaterialTextArea {
-            Layout.fillWidth: true
-            placeholderText: Translation.tr("Crosshair code (in Valorant's format)")
-            text: Config.options.crosshair.code
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Config.options.crosshair.code = text;
-            }
-        }
-
-        RowLayout {
-            StyledText {
-                Layout.leftMargin: 10
-                color: Appearance.colors.colSubtext
-                font.pixelSize: Appearance.font.pixelSize.smallie
-                text: Translation.tr("Press Super+G to open the overlay and pin the crosshair")
-            }
-            Item {
+        GroupedList {
+            ConfigTextArea {
+                text: Translation.tr("Crosshair code")
                 Layout.fillWidth: true
-            }
-            RippleButtonWithIcon {
-                id: editorButton
-                buttonRadius: Appearance.rounding.full
-                materialIcon: "open_in_new"
-                mainText: Translation.tr("Open editor")
-                onClicked: {
-                    Qt.openUrlExternally(`https://www.vcrdb.net/builder?c=${Config.options.crosshair.code}`);
+                placeholderText: Translation.tr("Crosshair code (in Valorant's format)")
+                value: Config.options.crosshair.code
+                textArea.wrapMode: TextEdit.Wrap
+                onValueChanged: {
+                    Config.options.crosshair.code = value;
                 }
-                StyledToolTip {
-                    text: "www.vcrdb.net"
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                StyledText {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    Layout.leftMargin: 10
+                    color: Appearance.colors.colSubtext
+                    font.pixelSize: Appearance.font.pixelSize.smallie
+                    text: Translation.tr("Press Super+G to open the overlay and pin the crosshair")
+                }
+                RippleButtonWithIcon {
+                    id: editorButton
+                    Layout.alignment: Qt.AlignRight
+                    buttonRadius: Appearance.rounding.full
+                    materialIcon: "open_in_new"
+                    mainText: Translation.tr("Open editor")
+                    onClicked: {
+                        Qt.openUrlExternally(`https://www.vcrdb.net/builder?c=${Config.options.crosshair.code
+                                             }`);
+                    }
+                    StyledToolTip {
+                        text: "www.vcrdb.net"
+                    }
                 }
             }
         }
@@ -357,13 +384,16 @@ ContentPage {
         icon: "point_scan"
         title: Translation.tr("Overlay: Floating Image")
 
-        MaterialTextArea {
-            Layout.fillWidth: true
-            placeholderText: Translation.tr("Image source")
-            text: Config.options.overlay.floatingImage.imageSource
-            wrapMode: TextEdit.Wrap
-            onTextChanged: {
-                Config.options.overlay.floatingImage.imageSource = text;
+        GroupedList {
+            ConfigTextArea {
+                text: Translation.tr("Image source")
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Image source")
+                value: Config.options.overlay.floatingImage.imageSource
+                textArea.wrapMode: TextEdit.Wrap
+                onValueChanged: {
+                    Config.options.overlay.floatingImage.imageSource = value;
+                }
             }
         }
     }
@@ -374,7 +404,7 @@ ContentPage {
 
         ContentSubsection {
             title: Translation.tr("Hint target regions")
-            ConfigRow {
+            GroupedList {
                 ConfigSwitch {
                     buttonIcon: "select_window"
                     text: Translation.tr('Windows')
@@ -399,64 +429,81 @@ ContentPage {
                         Config.options.regionSelector.targetRegions.content = checked;
                     }
                     StyledToolTip {
-                        text: Translation.tr("Could be images or parts of the screen that have some containment.\nMight not always be accurate.\nThis is done with an image processing algorithm run locally and no AI is used.")
+                        text: Translation.tr(
+                                  "Could be images or parts of the screen that have some containment.\nMight not always be accurate.\nThis is done with an image processing algorithm run locally and no AI is used.")
                     }
                 }
             }
         }
-        
+
         ContentSubsection {
             title: Translation.tr("Google Lens")
-            
-            ConfigSelectionArray {
-                currentValue: Config.options.search.imageSearch.useCircleSelection ? "circle" : "rectangles"
-                onSelected: newValue => {
-                    Config.options.search.imageSearch.useCircleSelection = (newValue === "circle");
+
+            GroupedList {
+                ConfigSelectionArray {
+                    text: Translation.tr("Selection shape")
+                    currentValue: Config.options.search.imageSearch.useCircleSelection ? "circle" :
+                                                                                         "rectangles"
+                    onSelected: newValue => {
+                        Config.options.search.imageSearch.useCircleSelection = (newValue === "circle");
+                    }
+                    options: [
+                        {
+                            icon: "activity_zone",
+                            value: "rectangles",
+                            displayName: Translation.tr("Rectangular selection")
+                        },
+                        {
+                            icon: "gesture",
+                            value: "circle",
+                            displayName: Translation.tr("Circle to Search")
+                        }
+                    ]
                 }
-                options: [
-                    { icon: "activity_zone", value: "rectangles", displayName: Translation.tr("Rectangular selection") },
-                    { icon: "gesture", value: "circle", displayName: Translation.tr("Circle to Search") }
-                ]
             }
         }
 
         ContentSubsection {
             title: Translation.tr("Rectangular selection")
 
-            ConfigSwitch {
-                buttonIcon: "point_scan"
-                text: Translation.tr("Show aim lines")
-                checked: Config.options.regionSelector.rect.showAimLines
-                onCheckedChanged: {
-                    Config.options.regionSelector.rect.showAimLines = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "point_scan"
+                    text: Translation.tr("Show aim lines")
+                    checked: Config.options.regionSelector.rect.showAimLines
+                    onCheckedChanged: {
+                        Config.options.regionSelector.rect.showAimLines = checked;
+                    }
                 }
             }
         }
 
         ContentSubsection {
             title: Translation.tr("Circle selection")
-            
-            ConfigSpinBox {
-                icon: "eraser_size_3"
-                text: Translation.tr("Stroke width")
-                value: Config.options.regionSelector.circle.strokeWidth
-                from: 1
-                to: 20
-                stepSize: 1
-                onValueChanged: {
-                    Config.options.regionSelector.circle.strokeWidth = value;
-                }
-            }
 
-            ConfigSpinBox {
-                icon: "screenshot_frame_2"
-                text: Translation.tr("Padding")
-                value: Config.options.regionSelector.circle.padding
-                from: 0
-                to: 100
-                stepSize: 5
-                onValueChanged: {
-                    Config.options.regionSelector.circle.padding = value;
+            GroupedList {
+                ConfigSpinBox {
+                    icon: "eraser_size_3"
+                    text: Translation.tr("Stroke width")
+                    value: Config.options.regionSelector.circle.strokeWidth
+                    from: 1
+                    to: 20
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.regionSelector.circle.strokeWidth = value;
+                    }
+                }
+
+                ConfigSpinBox {
+                    icon: "screenshot_frame_2"
+                    text: Translation.tr("Padding")
+                    value: Config.options.regionSelector.circle.padding
+                    from: 0
+                    to: 100
+                    stepSize: 5
+                    onValueChanged: {
+                        Config.options.regionSelector.circle.padding = value;
+                    }
                 }
             }
         }
@@ -466,60 +513,65 @@ ContentPage {
         icon: "side_navigation"
         title: Translation.tr("Sidebars")
 
-        ConfigSwitch {
-            buttonIcon: "memory"
-            text: Translation.tr('Keep right sidebar loaded')
-            checked: Config.options.sidebar.keepRightSidebarLoaded
-            onCheckedChanged: {
-                Config.options.sidebar.keepRightSidebarLoaded = checked;
+        GroupedList {
+            ConfigSwitch {
+                buttonIcon: "memory"
+                text: Translation.tr('Keep right sidebar loaded')
+                checked: Config.options.sidebar.keepRightSidebarLoaded
+                onCheckedChanged: {
+                    Config.options.sidebar.keepRightSidebarLoaded = checked;
+                }
+                StyledToolTip {
+                    text: Translation.tr(
+                              "When enabled keeps the content of the right sidebar loaded to reduce the delay when opening,\nat the cost of around 15MB of consistent RAM usage. Delay significance depends on your system's performance.\nUsing a custom kernel like linux-cachyos might help")
+                }
             }
-            StyledToolTip {
-                text: Translation.tr("When enabled keeps the content of the right sidebar loaded to reduce the delay when opening,\nat the cost of around 15MB of consistent RAM usage. Delay significance depends on your system's performance.\nUsing a custom kernel like linux-cachyos might help")
-            }
-        }
 
-        ConfigSwitch {
-            buttonIcon: "translate"
-            text: Translation.tr('Enable translator')
-            checked: Config.options.sidebar.translator.enable
-            onCheckedChanged: {
-                Config.options.sidebar.translator.enable = checked;
+            ConfigSwitch {
+                buttonIcon: "translate"
+                text: Translation.tr('Enable translator')
+                checked: Config.options.sidebar.translator.enable
+                onCheckedChanged: {
+                    Config.options.sidebar.translator.enable = checked;
+                }
             }
         }
 
         ContentSubsection {
             title: Translation.tr("Quick toggles")
-            
-            ConfigSelectionArray {
-                Layout.fillWidth: false
-                currentValue: Config.options.sidebar.quickToggles.style
-                onSelected: newValue => {
-                    Config.options.sidebar.quickToggles.style = newValue;
-                }
-                options: [
-                    {
-                        displayName: Translation.tr("Classic"),
-                        icon: "password_2",
-                        value: "classic"
-                    },
-                    {
-                        displayName: Translation.tr("Android"),
-                        icon: "action_key",
-                        value: "android"
-                    }
-                ]
-            }
 
-            ConfigSpinBox {
-                enabled: Config.options.sidebar.quickToggles.style === "android"
-                icon: "splitscreen_left"
-                text: Translation.tr("Columns")
-                value: Config.options.sidebar.quickToggles.android.columns
-                from: 1
-                to: 8
-                stepSize: 1
-                onValueChanged: {
-                    Config.options.sidebar.quickToggles.android.columns = value;
+            GroupedList {
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    currentValue: Config.options.sidebar.quickToggles.style
+                    onSelected: newValue => {
+                        Config.options.sidebar.quickToggles.style = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: Translation.tr("Classic"),
+                            icon: "password_2",
+                            value: "classic"
+                        },
+                        {
+                            displayName: Translation.tr("Android"),
+                            icon: "action_key",
+                            value: "android"
+                        }
+                    ]
+                }
+
+                ConfigSpinBox {
+                    enabled: Config.options.sidebar.quickToggles.style === "android"
+                    icon: "splitscreen_left"
+                    text: Translation.tr("Columns")
+                    value: Config.options.sidebar.quickToggles.android.columns
+                    from: 1
+                    to: 8
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.sidebar.quickToggles.android.columns = value;
+                    }
                 }
             }
         }
@@ -527,51 +579,53 @@ ContentPage {
         ContentSubsection {
             title: Translation.tr("Sliders")
 
-            ConfigSwitch {
-                buttonIcon: "check"
-                text: Translation.tr("Enable")
-                checked: Config.options.sidebar.quickSliders.enable
-                onCheckedChanged: {
-                    Config.options.sidebar.quickSliders.enable = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: Config.options.sidebar.quickSliders.enable
+                    onCheckedChanged: {
+                        Config.options.sidebar.quickSliders.enable = checked;
+                    }
                 }
-            }
-            
-            ConfigSwitch {
-                buttonIcon: "brightness_6"
-                text: Translation.tr("Brightness")
-                enabled: Config.options.sidebar.quickSliders.enable
-                checked: Config.options.sidebar.quickSliders.showBrightness
-                onCheckedChanged: {
-                    Config.options.sidebar.quickSliders.showBrightness = checked;
-                }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "volume_up"
-                text: Translation.tr("Volume")
-                enabled: Config.options.sidebar.quickSliders.enable
-                checked: Config.options.sidebar.quickSliders.showVolume
-                onCheckedChanged: {
-                    Config.options.sidebar.quickSliders.showVolume = checked;
+                ConfigSwitch {
+                    buttonIcon: "brightness_6"
+                    text: Translation.tr("Brightness")
+                    enabled: Config.options.sidebar.quickSliders.enable
+                    checked: Config.options.sidebar.quickSliders.showBrightness
+                    onCheckedChanged: {
+                        Config.options.sidebar.quickSliders.showBrightness = checked;
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "mic"
-                text: Translation.tr("Microphone")
-                enabled: Config.options.sidebar.quickSliders.enable
-                checked: Config.options.sidebar.quickSliders.showMic
-                onCheckedChanged: {
-                    Config.options.sidebar.quickSliders.showMic = checked;
+                ConfigSwitch {
+                    buttonIcon: "volume_up"
+                    text: Translation.tr("Volume")
+                    enabled: Config.options.sidebar.quickSliders.enable
+                    checked: Config.options.sidebar.quickSliders.showVolume
+                    onCheckedChanged: {
+                        Config.options.sidebar.quickSliders.showVolume = checked;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "mic"
+                    text: Translation.tr("Microphone")
+                    enabled: Config.options.sidebar.quickSliders.enable
+                    checked: Config.options.sidebar.quickSliders.showMic
+                    onCheckedChanged: {
+                        Config.options.sidebar.quickSliders.showMic = checked;
+                    }
                 }
             }
         }
 
         ContentSubsection {
             title: Translation.tr("Corner open")
-            tooltip: Translation.tr("Allows you to open sidebars by clicking or hovering screen corners regardless of bar position")
-            ConfigRow {
-                uniform: true
+            tooltip: Translation.tr(
+                         "Allows you to open sidebars by clicking or hovering screen corners regardless of bar position")
+            GroupedList {
                 ConfigSwitch {
                     buttonIcon: "check"
                     text: Translation.tr("Enable")
@@ -580,20 +634,18 @@ ContentPage {
                         Config.options.sidebar.cornerOpen.enable = checked;
                     }
                 }
-            }
-            ConfigSwitch {
-                buttonIcon: "highlight_mouse_cursor"
-                text: Translation.tr("Hover to trigger")
-                checked: Config.options.sidebar.cornerOpen.clickless
-                onCheckedChanged: {
-                    Config.options.sidebar.cornerOpen.clickless = checked;
-                }
+                ConfigSwitch {
+                    buttonIcon: "highlight_mouse_cursor"
+                    text: Translation.tr("Hover to trigger")
+                    checked: Config.options.sidebar.cornerOpen.clickless
+                    onCheckedChanged: {
+                        Config.options.sidebar.cornerOpen.clickless = checked;
+                    }
 
-                StyledToolTip {
-                    text: Translation.tr("When this is off you'll have to click")
+                    StyledToolTip {
+                        text: Translation.tr("When this is off you'll have to click")
+                    }
                 }
-            }
-            Row {
                 ConfigSwitch {
                     enabled: !Config.options.sidebar.cornerOpen.clickless
                     text: Translation.tr("Force hover open at absolute corner")
@@ -603,7 +655,8 @@ ContentPage {
                     }
 
                     StyledToolTip {
-                        text: Translation.tr("When the previous option is off and this is on,\nyou can still hover the corner's end to open sidebar,\nand the remaining area can be used for volume/brightness scroll")
+                        text: Translation.tr(
+                                  "When the previous option is off and this is on,\nyou can still hover the corner's end to open sidebar,\nand the remaining area can be used for volume/brightness scroll")
                     }
                 }
                 ConfigSpinBox {
@@ -616,21 +669,17 @@ ContentPage {
                     onValueChanged: {
                         Config.options.sidebar.cornerOpen.clicklessCornerVerticalOffset = value;
                     }
-                    MouseArea {
-                        id: mouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        acceptedButtons: Qt.NoButton
-                        StyledToolTip {
-                            extraVisibleCondition: mouseArea.containsMouse
-                            text: Translation.tr("Why this is cool:\nFor non-0 values, it won't trigger when you reach the\nscreen corner along the horizontal edge, but it will when\nyou do along the vertical edge")
-                        }
+                    HoverHandler {
+                        id: offsetHover
+                    }
+                    StyledToolTip {
+                        extraVisibleCondition: false
+                        alternativeVisibleCondition: offsetHover.hovered
+                        text: Translation.tr(
+                                  "Why this is cool:\nFor non-0 values, it won't trigger when you reach the\nscreen corner along the horizontal edge, but it will when\nyou do along the vertical edge")
                     }
                 }
-            }
-            
-            ConfigRow {
-                uniform: true
+
                 ConfigSwitch {
                     buttonIcon: "vertical_align_bottom"
                     text: Translation.tr("Place at bottom")
@@ -655,16 +704,14 @@ ContentPage {
                         text: Translation.tr("Brightness and volume")
                     }
                 }
-            }
-            ConfigSwitch {
-                buttonIcon: "visibility"
-                text: Translation.tr("Visualize region")
-                checked: Config.options.sidebar.cornerOpen.visualize
-                onCheckedChanged: {
-                    Config.options.sidebar.cornerOpen.visualize = checked;
+                ConfigSwitch {
+                    buttonIcon: "visibility"
+                    text: Translation.tr("Visualize region")
+                    checked: Config.options.sidebar.cornerOpen.visualize
+                    onCheckedChanged: {
+                        Config.options.sidebar.cornerOpen.visualize = checked;
+                    }
                 }
-            }
-            ConfigRow {
                 ConfigSpinBox {
                     icon: "arrow_range"
                     text: Translation.tr("Region width")
@@ -695,33 +742,35 @@ ContentPage {
         icon: "voting_chip"
         title: Translation.tr("On-screen display")
 
-        ConfigSpinBox {
-            icon: "av_timer"
-            text: Translation.tr("Timeout (ms)")
-            value: Config.options.osd.timeout
-            from: 100
-            to: 3000
-            stepSize: 100
-            onValueChanged: {
-                Config.options.osd.timeout = value;
+        GroupedList {
+            ConfigSpinBox {
+                icon: "av_timer"
+                text: Translation.tr("Timeout (ms)")
+                value: Config.options.osd.timeout
+                from: 100
+                to: 3000
+                stepSize: 100
+                onValueChanged: {
+                    Config.options.osd.timeout = value;
+                }
             }
-        }
 
-        ConfigSwitch {
-            buttonIcon: "keyboard_capslock"
-            text: Translation.tr("Show Caps Lock OSD")
-            checked: Config.options.osd.capsLock
-            onCheckedChanged: {
-                Config.options.osd.capsLock = checked;
+            ConfigSwitch {
+                buttonIcon: "keyboard_capslock"
+                text: Translation.tr("Show Caps Lock OSD")
+                checked: Config.options.osd.capsLock
+                onCheckedChanged: {
+                    Config.options.osd.capsLock = checked;
+                }
             }
-        }
 
-        ConfigSwitch {
-            buttonIcon: "filter_1"
-            text: Translation.tr("Show Num Lock OSD")
-            checked: Config.options.osd.numLock
-            onCheckedChanged: {
-                Config.options.osd.numLock = checked;
+            ConfigSwitch {
+                buttonIcon: "filter_1"
+                text: Translation.tr("Show Num Lock OSD")
+                checked: Config.options.osd.numLock
+                onCheckedChanged: {
+                    Config.options.osd.numLock = checked;
+                }
             }
         }
     }
@@ -730,36 +779,35 @@ ContentPage {
         icon: "overview_key"
         title: Translation.tr("Overview")
 
-        ConfigSwitch {
-            buttonIcon: "check"
-            text: Translation.tr("Enable")
-            checked: Config.options.overview.enable
-            onCheckedChanged: {
-                Config.options.overview.enable = checked;
+        GroupedList {
+            ConfigSwitch {
+                buttonIcon: "check"
+                text: Translation.tr("Enable")
+                checked: Config.options.overview.enable
+                onCheckedChanged: {
+                    Config.options.overview.enable = checked;
+                }
             }
-        }
 
-        ConfigSwitch {
-            buttonIcon: "center_focus_strong"
-            text: Translation.tr("Center icons")
-            checked: Config.options.overview.centerIcons
-            onCheckedChanged: {
-                Config.options.overview.centerIcons = checked;
+            ConfigSwitch {
+                buttonIcon: "center_focus_strong"
+                text: Translation.tr("Center icons")
+                checked: Config.options.overview.centerIcons
+                onCheckedChanged: {
+                    Config.options.overview.centerIcons = checked;
+                }
             }
-        }
-        ConfigSpinBox {
-            icon: "loupe"
-            text: Translation.tr("Scale (%)")
-            value: Config.options.overview.scale * 100
-            from: 1
-            to: 100
-            stepSize: 1
-            onValueChanged: {
-                Config.options.overview.scale = value / 100;
+            ConfigSpinBox {
+                icon: "loupe"
+                text: Translation.tr("Scale (%)")
+                value: Config.options.overview.scale * 100
+                from: 1
+                to: 100
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.overview.scale = value / 100;
+                }
             }
-        }
-        ConfigRow {
-            uniform: true
             ConfigSpinBox {
                 icon: "splitscreen_bottom"
                 text: Translation.tr("Rows")
@@ -782,13 +830,11 @@ ContentPage {
                     Config.options.overview.columns = value;
                 }
             }
-        }
-        ConfigRow {
-            uniform: true
             ConfigSelectionArray {
+                text: Translation.tr("Horizontal order")
                 currentValue: Config.options.overview.orderRightLeft
                 onSelected: newValue => {
-                    Config.options.overview.orderRightLeft = newValue
+                    Config.options.overview.orderRightLeft = newValue;
                 }
                 options: [
                     {
@@ -804,9 +850,10 @@ ContentPage {
                 ]
             }
             ConfigSelectionArray {
+                text: Translation.tr("Vertical order")
                 currentValue: Config.options.overview.orderBottomUp
                 onSelected: newValue => {
-                    Config.options.overview.orderBottomUp = newValue
+                    Config.options.overview.orderBottomUp = newValue;
                 }
                 options: [
                     {
@@ -828,12 +875,14 @@ ContentPage {
         icon: "wallpaper_slideshow"
         title: Translation.tr("Wallpaper selector")
 
-        ConfigSwitch {
-            buttonIcon: "ad"
-            text: Translation.tr('Use system file picker')
-            checked: Config.options.wallpaperSelector.useSystemFileDialog
-            onCheckedChanged: {
-                Config.options.wallpaperSelector.useSystemFileDialog = checked;
+        GroupedList {
+            ConfigSwitch {
+                buttonIcon: "ad"
+                text: Translation.tr('Use system file picker')
+                checked: Config.options.wallpaperSelector.useSystemFileDialog
+                onCheckedChanged: {
+                    Config.options.wallpaperSelector.useSystemFileDialog = checked;
+                }
             }
         }
     }
@@ -846,13 +895,16 @@ ContentPage {
             title: Translation.tr("Main font")
             tooltip: Translation.tr("Used for general UI text")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Font family name (e.g., Google Sans Flex)")
-                text: Config.options.appearance.fonts.main
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.appearance.fonts.main = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Main font")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Font family name (e.g., Google Sans Flex)")
+                    value: Config.options.appearance.fonts.main
+                    textArea.wrapMode: TextEdit.NoWrap
+                    onValueChanged: {
+                        Config.options.appearance.fonts.main = value;
+                    }
                 }
             }
         }
@@ -861,13 +913,16 @@ ContentPage {
             title: Translation.tr("Numbers font")
             tooltip: Translation.tr("Used for displaying numbers")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Font family name")
-                text: Config.options.appearance.fonts.numbers
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.appearance.fonts.numbers = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Numbers font")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Font family name")
+                    value: Config.options.appearance.fonts.numbers
+                    textArea.wrapMode: TextEdit.NoWrap
+                    onValueChanged: {
+                        Config.options.appearance.fonts.numbers = value;
+                    }
                 }
             }
         }
@@ -876,13 +931,16 @@ ContentPage {
             title: Translation.tr("Title font")
             tooltip: Translation.tr("Used for headings and titles")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Font family name")
-                text: Config.options.appearance.fonts.title
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.appearance.fonts.title = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Title font")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Font family name")
+                    value: Config.options.appearance.fonts.title
+                    textArea.wrapMode: TextEdit.NoWrap
+                    onValueChanged: {
+                        Config.options.appearance.fonts.title = value;
+                    }
                 }
             }
         }
@@ -891,13 +949,16 @@ ContentPage {
             title: Translation.tr("Monospace font")
             tooltip: Translation.tr("Used for code and terminal")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
-                text: Config.options.appearance.fonts.monospace
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.appearance.fonts.monospace = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Monospace font")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
+                    value: Config.options.appearance.fonts.monospace
+                    textArea.wrapMode: TextEdit.NoWrap
+                    onValueChanged: {
+                        Config.options.appearance.fonts.monospace = value;
+                    }
                 }
             }
         }
@@ -906,13 +967,16 @@ ContentPage {
             title: Translation.tr("Nerd font icons")
             tooltip: Translation.tr("Font used for Nerd Font icons")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
-                text: Config.options.appearance.fonts.iconNerd
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.appearance.fonts.iconNerd = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Nerd font icons")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
+                    value: Config.options.appearance.fonts.iconNerd
+                    textArea.wrapMode: TextEdit.NoWrap
+                    onValueChanged: {
+                        Config.options.appearance.fonts.iconNerd = value;
+                    }
                 }
             }
         }
@@ -921,13 +985,16 @@ ContentPage {
             title: Translation.tr("Reading font")
             tooltip: Translation.tr("Used for reading large blocks of text")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Font family name (e.g., Readex Pro)")
-                text: Config.options.appearance.fonts.reading
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.appearance.fonts.reading = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Reading font")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Font family name (e.g., Readex Pro)")
+                    value: Config.options.appearance.fonts.reading
+                    textArea.wrapMode: TextEdit.NoWrap
+                    onValueChanged: {
+                        Config.options.appearance.fonts.reading = value;
+                    }
                 }
             }
         }
@@ -936,16 +1003,18 @@ ContentPage {
             title: Translation.tr("Expressive font")
             tooltip: Translation.tr("Used for decorative/expressive text")
 
-            MaterialTextArea {
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Font family name (e.g., Space Grotesk)")
-                text: Config.options.appearance.fonts.expressive
-                wrapMode: TextEdit.NoWrap
-                onTextChanged: {
-                    Config.options.appearance.fonts.expressive = text;
+            GroupedList {
+                ConfigTextArea {
+                    text: Translation.tr("Expressive font")
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Font family name (e.g., Space Grotesk)")
+                    value: Config.options.appearance.fonts.expressive
+                    textArea.wrapMode: TextEdit.NoWrap
+                    onValueChanged: {
+                        Config.options.appearance.fonts.expressive = value;
+                    }
                 }
             }
         }
     }
-
 }

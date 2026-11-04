@@ -29,6 +29,8 @@ ShellRoot {
         ConflictKiller.load()
         Cliphist.refresh()
         BatteryHistory.load()
+        PeripheralBattery.load()
+        LiveWallpaper.load()
         Wallpapers.load()
         Updates.load()
     }

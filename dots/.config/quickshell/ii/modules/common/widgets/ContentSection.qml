@@ -16,6 +16,7 @@ ColumnLayout {
     spacing: 6
 
     RowLayout {
+        Layout.fillWidth: true
         spacing: 6
         MaterialShapeWrappedMaterialSymbol {
             text: root.icon
@@ -24,7 +25,9 @@ ColumnLayout {
             color: bgColor
         }
         StyledText {
+            Layout.fillWidth: true
             text: root.title
+            wrapMode: Text.Wrap
             font.pixelSize: Appearance.font.pixelSize.larger
             font.weight: Font.Medium
             color: Appearance.colors.colOnSecondaryContainer

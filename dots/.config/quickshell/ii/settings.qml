@@ -27,6 +27,26 @@ ApplicationWindow {
     property bool showingProfile: false
     property var pages: [
         {
+            name: Translation.tr("Displays"),
+            icon: "desktop_windows",
+            component: "modules/settings/DisplaysConfig.qml"
+        },
+        {
+            name: Translation.tr("Startup"),
+            icon: "rocket_launch",
+            component: "modules/settings/StartupConfig.qml"
+        },
+        {
+            name: Translation.tr("Widgets"),
+            icon: "widgets",
+            component: "modules/settings/WidgetsConfig.qml"
+        },
+        {
+            name: Translation.tr("Appearance"),
+            icon: "palette",
+            component: "modules/settings/AppearanceConfig.qml"
+        },
+        {
             name: Translation.tr("Quick"),
             icon: "instant_mix",
             component: "modules/settings/QuickConfig.qml"
@@ -69,16 +89,23 @@ ApplicationWindow {
         }
     ]
     property int currentPage: 0
+    onCurrentPageChanged: Qt.callLater(() => {
+        const top = currentPage * 56;
+        if (top < navScroll.contentY)
+            navScroll.contentY = top;
+        else if (top + 56 > navScroll.contentY + navScroll.height)
+            navScroll.contentY = Math.max(0, top + 56 - navScroll.height);
+    })
 
     visible: true
     onClosing: Qt.quit()
     title: "illogical-impulse Settings"
 
     Component.onCompleted: {
-        MaterialThemeLoader.reapplyTheme()
-        Config.readWriteDelay = 0
-        currentPage = 0
-        showingProfile = false
+        MaterialThemeLoader.reapplyTheme();
+        Config.readWriteDelay = 0;
+        currentPage = 0;
+        showingProfile = false;
     }
 
     minimumWidth: 750
@@ -93,21 +120,18 @@ ApplicationWindow {
             margins: contentPadding
         }
 
-        Keys.onPressed: (event) => {
+        Keys.onPressed: event => {
             if (event.modifiers === Qt.ControlModifier) {
                 if (event.key === Qt.Key_PageDown) {
-                    root.currentPage = Math.min(root.currentPage + 1, root.pages.length - 1)
+                    root.currentPage = Math.min(root.currentPage + 1, root.pages.length - 1);
                     event.accepted = true;
-                } 
-                else if (event.key === Qt.Key_PageUp) {
-                    root.currentPage = Math.max(root.currentPage - 1, 0)
+                } else if (event.key === Qt.Key_PageUp) {
+                    root.currentPage = Math.max(root.currentPage - 1, 0);
                     event.accepted = true;
-                }
-                else if (event.key === Qt.Key_Tab) {
+                } else if (event.key === Qt.Key_Tab) {
                     root.currentPage = (root.currentPage + 1) % root.pages.length;
                     event.accepted = true;
-                }
-                else if (event.key === Qt.Key_Backtab) {
+                } else if (event.key === Qt.Key_Backtab) {
                     root.currentPage = (root.currentPage - 1 + root.pages.length) % root.pages.length;
                     event.accepted = true;
                 }
@@ -169,12 +193,9 @@ ApplicationWindow {
 
                 NavigationRail {
                     id: navRail
-                    anchors {
-                        left: parent.left
-                        top: parent.top
-                        bottom: parent.bottom
-                        leftMargin: 20
-                    }
+                    spacing: 12
+                    anchors.fill: parent
+                    anchors.margins: 12
                     spacing: 10
 
                     Item {
@@ -201,9 +222,9 @@ ApplicationWindow {
                                 Image {
                                     id: avatarImage
                                     anchors.fill: parent
-                                    source: (Config.options?.profile?.avatarPicture ?? "") !== ""
-                                        ? "file://" + Config.options.profile.avatarPicture
-                                        : ""
+                                    source: (Config.options?.profile?.avatarPicture ?? "") !== "" ? "file://"
+                                                                                                    + Config.options.profile.avatarPicture :
+                                                                                                    ""
                                     sourceSize.width: avatarImage.width * 2
                                     sourceSize.height: avatarImage.height * 2
                                     fillMode: Image.PreserveAspectCrop
@@ -221,7 +242,7 @@ ApplicationWindow {
                                     }
                                     onStatusChanged: {
                                         if (status === Image.Error)
-                                            visible = false
+                                            visible = false;
                                     }
                                 }
 
@@ -230,7 +251,9 @@ ApplicationWindow {
                                     text: "account_circle"
                                     iconSize: 24
                                     color: Appearance.colors.colOnPrimaryContainer
-                                    visible: avatarImage.status === Image.Error || (Config.options?.profile?.avatarPicture ?? "") === ""
+                                    visible: avatarImage.status === Image.Error || (Config.options?.profile
+                                                                                    ?.avatarPicture ?? "")
+                                             === ""
                                 }
                             }
 
@@ -240,7 +263,11 @@ ApplicationWindow {
                                 Layout.alignment: Qt.AlignVCenter
 
                                 StyledText {
-                                    text: (Config.options?.profile?.displayName ?? "") === "" ? (Quickshell.env("USER") || "User") : Config.options.profile.displayName
+                                    text: (Config.options?.profile?.displayName ?? "") === "" ? (
+                                                                                                    Quickshell.env(
+                                                                                                        "USER")
+                                                                                                    || "User") :
+                                                                                                Config.options.profile.displayName
                                     font.bold: true
                                     font.pixelSize: Appearance.font.pixelSize.normal
                                     color: Appearance.colors.colOnLayer0
@@ -255,8 +282,8 @@ ApplicationWindow {
                                     opacity: 0.7
                                     Layout.fillWidth: true
                                     text: (Config.options?.profile?.descriptionText ?? "") === "::uptime::"
-                                        ? Translation.tr("Up %1").arg(DateTime.uptime)
-                                        : (SystemInfo.distroName || "Linux")
+                                          ? Translation.tr("Up %1").arg(DateTime.uptime) : (
+                                                SystemInfo.distroName || "Linux")
                                 }
                             }
                         }
@@ -270,21 +297,36 @@ ApplicationWindow {
 
                     Rectangle {
                         width: 160
-                        Layout.topMargin: -5
+                        Layout.topMargin: 0
                         height: 2
                         gradient: Gradient {
                             orientation: Gradient.Horizontal
-                            GradientStop { position: 0.0; color: "transparent" }
-                            GradientStop { position: 0.2; color: Appearance.colors.colOutline }
-                            GradientStop { position: 0.8; color: Appearance.colors.colOutline }
-                            GradientStop { position: 1.0; color: "transparent" }
+                            GradientStop {
+                                position: 0.0
+                                color: "transparent"
+                            }
+                            GradientStop {
+                                position: 0.2
+                                color: Appearance.colors.colOutline
+                            }
+                            GradientStop {
+                                position: 0.8
+                                color: Appearance.colors.colOutline
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: "transparent"
+                            }
                         }
                         opacity: 0.15
                     }
 
                     FloatingActionButton {
                         id: fab
-                        Layout.bottomMargin: -25
+                        objectName: "settingsConfigButton"
+                        Layout.bottomMargin: 0
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 48
                         property bool justCopied: false
                         iconText: justCopied ? "check" : "edit"
                         buttonText: justCopied ? Translation.tr("Path copied") : Translation.tr("Config file")
@@ -293,9 +335,10 @@ ApplicationWindow {
                             Qt.openUrlExternally(`${Directories.config}/illogical-impulse/config.json`);
                         }
                         altAction: () => {
-                            Quickshell.clipboardText = CF.FileUtils.trimFileProtocol(`${Directories.config}/illogical-impulse/config.json`);
+                            Quickshell.clipboardText = CF.FileUtils.trimFileProtocol(`${Directories.config
+                                                                                     }/illogical-impulse/config.json`);
                             fab.justCopied = true;
-                            revertTextTimer.restart()
+                            revertTextTimer.restart();
                         }
 
                         Timer {
@@ -307,35 +350,49 @@ ApplicationWindow {
                         }
 
                         StyledToolTip {
-                            text: Translation.tr("Open the shell config file\nAlternatively right-click to copy path")
+                            text: Translation.tr(
+                                      "Open the shell config file\nAlternatively right-click to copy path")
                         }
                     }
 
-                    NavigationRailTabArray {
-                        currentIndex: root.currentPage
-                        expanded: navRail.expanded
-                        colToggled: root.showingProfile ? "transparent" : Appearance.colors.colSecondaryContainer
-                        Repeater {
-                            model: root.pages
-                            NavigationRailButton {
-                                required property var index
-                                required property var modelData
-                                toggled: root.currentPage === index && !root.showingProfile
-                                onPressed: {
-                                    root.currentPage = index
-                                    root.showingProfile = false
+                    Flickable {
+                        id: navScroll
+                        objectName: "settingsNavScroll"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: 0
+                        contentHeight: navTabs.implicitHeight
+                        contentWidth: width
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        flickableDirection: Flickable.VerticalFlick
+                        interactive: contentHeight > height
+                        NavigationRailTabArray {
+                            id: navTabs
+                            width: navScroll.width
+                            height: implicitHeight
+                            currentIndex: root.currentPage
+                            expanded: navRail.expanded
+                            colToggled: root.showingProfile ? "transparent" :
+                                                              Appearance.colors.colSecondaryContainer
+                            Repeater {
+                                model: root.pages
+                                NavigationRailButton {
+                                    required property var index
+                                    required property var modelData
+                                    toggled: root.currentPage === index && !root.showingProfile
+                                    onPressed: {
+                                        root.currentPage = index;
+                                        root.showingProfile = false;
+                                    }
+                                    expanded: navRail.expanded
+                                    buttonIcon: modelData.icon
+                                    buttonIconRotation: modelData.iconRotation || 0
+                                    buttonText: modelData.name
+                                    showToggledHighlight: false
                                 }
-                                expanded: navRail.expanded
-                                buttonIcon: modelData.icon
-                                buttonIconRotation: modelData.iconRotation || 0
-                                buttonText: modelData.name
-                                showToggledHighlight: false
                             }
                         }
-                    }
-
-                    Item {
-                        Layout.fillHeight: true
                     }
                 }
             }
@@ -362,17 +419,7 @@ ApplicationWindow {
                             anchors.fill: parent
 
                             property bool isActive: root.currentPage === index && !root.showingProfile
-                            opacity: isActive ? 1 : 0
-                            enabled: isActive
                             visible: isActive
-                            anchors.topMargin: isActive ? 0 : 12
-
-                            Behavior on opacity {
-                                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                            }
-                            Behavior on anchors.topMargin {
-                                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                            }
                         }
                     }
 
@@ -383,17 +430,7 @@ ApplicationWindow {
                         source: "modules/settings/Profile.qml"
 
                         property bool isActive: root.showingProfile
-                        opacity: isActive ? 1 : 0
-                        enabled: isActive
                         visible: isActive
-                        anchors.topMargin: isActive ? 0 : 12
-
-                        Behavior on opacity {
-                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                        }
-                        Behavior on anchors.topMargin {
-                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                        }
                     }
                 }
             }

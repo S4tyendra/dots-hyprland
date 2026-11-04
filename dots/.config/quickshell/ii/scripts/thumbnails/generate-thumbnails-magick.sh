@@ -36,7 +36,7 @@ urlencode() {
     for ((i=0; i<${#str}; i++)); do
         c="${str:$i:1}"
         case "$c" in
-            [a-zA-Z0-9.~_-]|/|'('|')'|'*') encoded+="$c" ;;
+            [a-zA-Z0-9.~_-]|/|'('|')'|'*'|"'"|'!') encoded+="$c" ;;
             *) printf -v hex '%%%02X' "'${c}'"; encoded+="$hex" ;;
         esac
     done
@@ -47,12 +47,6 @@ generate_thumbnail() {
     local src="$1"
     local abs_path
     abs_path="$(realpath "$src")"
-    # Skip files with multiple frames (GIFs, videos, etc.)
-    case "${abs_path,,}" in
-        *.gif|*.mp4|*.webm|*.mkv|*.avi|*.mov)
-            return
-            ;;
-    esac
     local encoded_path
     encoded_path="$(urlencode "$abs_path")"
     local uri
@@ -64,7 +58,15 @@ generate_thumbnail() {
     if [ -f "$out" ]; then
         return
     fi
-    magick "$abs_path" -resize "${THUMBNAIL_SIZE}x${THUMBNAIL_SIZE}" "$out"
+    case "${abs_path,,}" in
+        *.mp4|*.webm|*.mkv|*.avi|*.mov)
+            ffmpeg -v error -nostdin -threads 1 -i "$abs_path" -frames:v 1 \
+                -vf "scale=${THUMBNAIL_SIZE}:${THUMBNAIL_SIZE}:force_original_aspect_ratio=decrease" "$out"
+            ;;
+        *.jpg|*.jpeg|*.png|*.webp|*.avif|*.bmp|*.svg|*.gif)
+            magick "${abs_path}[0]" -resize "${THUMBNAIL_SIZE}x${THUMBNAIL_SIZE}" "$out"
+            ;;
+    esac
 }
 
 # Parse arguments
@@ -96,7 +98,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 THUMBNAIL_SIZE="$(get_thumbnail_size "$SIZE_NAME")"
-CACHE_DIR="$HOME/.cache/thumbnails/$SIZE_NAME"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/thumbnails/$SIZE_NAME"
 
 if [ -z "$MODE" ] || [ -z "$TARGET" ]; then
     usage
@@ -117,7 +119,7 @@ case "$MODE" in
         fi
         for f in "$TARGET"/*; do
             [ -f "$f" ] || continue
-            generate_thumbnail "$f" &
+            generate_thumbnail "$f"
         done
         wait
         ;;

@@ -3,6 +3,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.ii.wallpaperSelector
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -13,6 +14,7 @@ import Quickshell.Hyprland
 
 MouseArea {
     id: root
+    property bool online: false
     property int columns: 4
     property real previewCellAspectRatio: 4 / 3
     property bool useDarkMode: Appearance.m3colors.darkmode
@@ -91,6 +93,7 @@ MouseArea {
     }
 
     Keys.onPressed: event => {
+        if (root.online && event.key !== Qt.Key_Escape) { event.accepted = false; return; }
         if (event.key === Qt.Key_Escape) {
             GlobalStates.wallpaperSelectorOpen = false;
             event.accepted = true;
@@ -191,7 +194,46 @@ MouseArea {
                         }
                         text: Translation.tr("Pick a wallpaper")
                     }
+                    RowLayout {
+                        Layout.margins: 6
+                        Layout.maximumHeight: 42
+                        SelectionGroupButton {
+                            Layout.fillHeight: false
+                            buttonText: Translation.tr("Local")
+                            toggled: !root.online
+                            leftmost: true
+                            onClicked: root.online = false
+                        }
+                        SelectionGroupButton {
+                            Layout.fillHeight: false
+                            buttonText: Translation.tr("Online")
+                            toggled: root.online
+                            rightmost: true
+                            onClicked: root.online = true
+                        }
+                    }
+                    StyledComboBox {
+                        Layout.fillWidth: true
+                        Layout.margins: 6
+                        visible: Config.options.background.multiMonitor.enable
+                        model: [Translation.tr("All displays"), ...root.monitorNameList]
+                        currentIndex: Math.max(0, root.monitorNameList.indexOf(root.selectedMonitor) + 1)
+                        onActivated: root.selectedMonitor = currentIndex === 0 ? "" : root.monitorNameList[currentIndex - 1]
+                        Accessible.name: Translation.tr("Wallpaper display")
+                    }
+                    RippleButtonWithIcon {
+                        Layout.margins: 6
+                        visible: root.online
+                        materialIcon: "close"
+                        mainText: Translation.tr("Close")
+                        onClicked: GlobalStates.wallpaperSelectorOpen = false
+                    }
+                    Item {
+                        visible: root.online
+                        Layout.fillHeight: true
+                    }
                     ListView {
+                        visible: !root.online
                         // Quick dirs
                         Layout.fillHeight: true
                         Layout.margins: 4
@@ -275,8 +317,21 @@ MouseArea {
                 }
             }
 
+            Loader {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.margins: 8
+                active: root.online
+                visible: active
+                sourceComponent: OnlineWallpaperBrowser {
+                    darkMode: root.useDarkMode
+                    monitorName: root.selectedMonitor
+                }
+            }
+
             ColumnLayout {
                 id: gridColumnLayout
+                visible: !root.online
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
