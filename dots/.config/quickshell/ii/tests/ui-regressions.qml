@@ -223,12 +223,33 @@ ShellRoot {
                 root.keybindStage = 3;
                 return;
             }
-            root.check(!binds.editorOpen, "new shortcut did not save: " + binds.captureError);
-            root.check(binds.entries.some(entry => entry.combo === "SUPER + I" && entry.description === 'Launch "test"'), "new shortcut name missing or escaped incorrectly");
-            binds.startEdit(null);
-            root.check(binds.comboError("SUPER + I") !== "", "duplicate shortcut accepted");
-            root.check(binds.comboError('SUPER + T"') !== "", "unsafe shortcut accepted");
-            binds.closeDialog();
+            if (root.keybindStage === 3) {
+                root.check(!binds.editorOpen, "new shortcut did not save: " + binds.captureError);
+                root.check(binds.entries.some(entry => entry.combo === "SUPER + I" && entry.description === 'Launch "test"'), "new shortcut name missing or escaped incorrectly");
+                binds.startEdit(null);
+                root.check(binds.comboError("SUPER + I") !== "", "duplicate shortcut accepted");
+                root.check(binds.comboError('SUPER + T"') !== "", "unsafe shortcut accepted");
+                binds.closeDialog();
+                Config.options.appearance.transparency.automatic = false;
+                Config.options.appearance.transparency.backgroundTransparency = 0.3;
+                Config.options.appearance.transparency.enable = true;
+                settings.currentPage = 0;
+                settings.showingProfile = false;
+                settings.updateSearch("se");
+                root.keybindStage = 4;
+                return;
+            }
+            if (root.keybindStage === 4) {
+                const page = settings.pageItem(0);
+                root.check(!page.parent.visible, "page shows through transparent search results");
+                let frame = page;
+                while (frame.parent) frame = frame.parent;
+                root.check(root.findObject(frame, "settingsSearchResults").visible, "search results missing");
+                root.capture(root.findObject(frame, "settingsFrame"), "Search-transparent", () => { root.keybindStage = 5; });
+                return;
+            }
+            settings.clearSearch();
+            root.check(settings.pageItem(0).parent.visible, "page not restored after search");
             stop();
 
             const monitor = {id: 0, width: 1920, height: 1080, scale: 1, dpmsStatus: true, activeWorkspace: {id: 1}};

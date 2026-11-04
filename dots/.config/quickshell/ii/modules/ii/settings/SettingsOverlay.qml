@@ -735,7 +735,7 @@ ${Directories.config}/illogical-impulse/config.json`);
                                     anchors.fill: parent
 
                                     property bool isActive: root.currentPage === index && !root.showingProfile
-                                    visible: isActive
+                                    visible: isActive && SettingsSearch.query.trim() === ""
                                 }
                             }
 
@@ -746,13 +746,14 @@ ${Directories.config}/illogical-impulse/config.json`);
                                 source: Qt.resolvedUrl("../../settings/Profile.qml")
 
                                 property bool isActive: root.showingProfile
-                                visible: isActive
+                                visible: isActive && SettingsSearch.query.trim() === ""
                             }
 
-                            // Search results, shown above the page stack
+                            // Hide the page underneath so translucent results use the window material.
                             Rectangle {
                                 anchors.fill: parent
                                 z: 5
+                                objectName: "settingsSearchResults"
                                 visible: SettingsSearch.query.trim() !== ""
                                 radius: Appearance.rounding.normal
                                 color: Appearance.colors.colLayer0
