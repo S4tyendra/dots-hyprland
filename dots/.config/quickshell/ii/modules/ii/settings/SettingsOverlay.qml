@@ -96,6 +96,16 @@ Scope {
     property int currentPage: 0
     // Bit mask of pages that were opened and should stay loaded
     property int visitedMask: 0
+    property bool profileVisited: false
+    property bool indexReady: false
+    onShowingProfileChanged: if (showingProfile) profileVisited = true
+
+    // Keep settings source parsing out of the initial shell startup.
+    Timer {
+        interval: 1500
+        running: Config.ready && !root.indexReady
+        onTriggered: root.indexReady = true
+    }
     property string pendingSection: ""
 
     Connections {
@@ -239,6 +249,8 @@ Scope {
             if (GlobalStates.settingsOpen) {
                 Config.readWriteDelay = 0;
                 root.resetState();
+                root.visitedMask |= 1 << root.currentPage;
+                root.indexReady = true;
             }
         }
     }
@@ -727,9 +739,8 @@ ${Directories.config}/illogical-impulse/config.json`);
                                     // Pages are loaded on first visit and stay loaded
                                     // afterwards. Search never loads a page: its index
                                     // is parsed from the page sources (see below).
-                                    active: Config.ready && (root.currentPage === index || (root.visitedMask
-                                                                                            & (1 << index))
-                                                             !== 0)
+                                    active: Config.ready && ((root.visitedMask & (1 << index)) !== 0
+                                        || (GlobalStates.settingsOpen && root.currentPage === index))
                                     asynchronous: true
 
                                     anchors.fill: parent
@@ -741,7 +752,8 @@ ${Directories.config}/illogical-impulse/config.json`);
 
                             Loader {
                                 id: profileLoader
-                                active: Config.ready
+                                active: Config.ready && root.profileVisited
+                                asynchronous: true
                                 anchors.fill: parent
                                 source: Qt.resolvedUrl("../../settings/Profile.qml")
 
@@ -873,7 +885,7 @@ ${searchResultButton.modelData.pageName} · ${searchResultButton.modelData.secti
     // their bind descriptions to the Keybinds page's entries.
     Instantiator {
         id: indexSources
-        model: root.pages
+        model: root.indexReady ? root.pages : []
         delegate: FileView {
             required property var modelData
             required property int index
@@ -885,13 +897,13 @@ ${searchResultButton.modelData.pageName} · ${searchResultButton.modelData.secti
     FileView {
         id: keybindsMainView
         path: CF.FileUtils.trimFileProtocol(Directories.config + "/hypr/hyprland/keybinds.lua")
-        onLoaded: root.refreshKeybindIndex()
+        onLoaded: if (root.indexReady) root.refreshKeybindIndex()
     }
 
     FileView {
         id: keybindsCustomView
         path: CF.FileUtils.trimFileProtocol(Directories.config + "/hypr/custom/keybinds.lua")
-        onLoaded: root.refreshKeybindIndex()
+        onLoaded: if (root.indexReady) root.refreshKeybindIndex()
     }
 
     // Page components are `qs:`-scheme URLs, which FileView cannot read;
@@ -903,6 +915,8 @@ ${searchResultButton.modelData.pageName} · ${searchResultButton.modelData.secti
             return CF.FileUtils.trimFileProtocol(Quickshell.shellPath(url.slice(prefix.length)));
         return CF.FileUtils.trimFileProtocol(url);
     }
+
+    onIndexReadyChanged: if (indexReady) refreshKeybindIndex()
 
     function refreshKeybindIndex() {
         for (let i = 0; i < pages.length; i++) {

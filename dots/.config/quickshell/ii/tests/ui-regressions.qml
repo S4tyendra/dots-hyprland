@@ -17,6 +17,8 @@ ShellRoot {
     property int attempts: 0
     property int phase: 0
     property int keybindStage: 0
+    property int startupTicks: 0
+    property bool startupChecked: false
     property var compactPage: null
     property var displayedPage: null
     property bool capturing: false
@@ -71,7 +73,7 @@ ShellRoot {
     }
     Component.onCompleted: {
         MaterialThemeLoader.reapplyTheme();
-        GlobalStates.settingsOpen = true;
+        GlobalStates.settingsOpen = false;
     }
     function visit(object, callback) {
         const queue = [object];
@@ -132,6 +134,14 @@ ShellRoot {
         repeat: true
         onTriggered: {
             if (!Config.ready || root.capturing) return;
+            if (!root.startupChecked) {
+                if (++root.startupTicks < 3) return;
+                root.check(settings.pageItem(0) === null, "Quick settings eagerly loaded while closed");
+                root.check(settings.pageItem(-1) === null, "Profile eagerly loaded while closed");
+                root.startupChecked = true;
+                GlobalStates.settingsOpen = true;
+                return;
+            }
             if (root.step < root.navigation.length) {
                 const index = root.navigation[root.step];
                 settings.showingProfile = index < 0;
