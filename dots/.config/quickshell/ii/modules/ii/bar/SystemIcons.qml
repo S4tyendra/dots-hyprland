@@ -79,6 +79,10 @@ Item {
                 iconSize: Appearance.font.pixelSize.larger
                 color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
             }
+            PeripheralBatteryIndicators {
+                vertical: root.vertical
+                color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+            }
             Loader {
                 id: notifLoader
                 active: Notifications.silent || Notifications.unread > 0

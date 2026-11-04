@@ -18,26 +18,33 @@ AbstractWidget {
     property bool visibleWhenLocked: Config.options?.lock?.showWidgets ?? false
     property var configEntry: Config.options.background.widgets[configEntryName]
     property string placementStrategy: configEntry.placementStrategy
-    property real targetX: Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width))
-    property real targetY : Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height))
-    x: targetX
-    y: targetY
+    readonly property real widgetScale: Math.max(0.5, Math.min(2, configEntry.scale ?? 1))
+    property real targetX: Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width * widgetScale))
+    property real targetY : Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height * widgetScale))
+    property bool forceCenter: false
+    readonly property real displayX: forceCenter ? (screenWidth - width * widgetScale) / 2 : targetX
+    readonly property real displayY: forceCenter ? (screenHeight - height * widgetScale) / 2 : targetY
+    x: displayX
+    y: displayY
     visible: opacity > 0
     opacity: (GlobalStates.screenLocked && !visibleWhenLocked) ? 0 : 1
     Behavior on opacity {
         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
     }
-    scale: (draggable && containsPress) ? 1.05 : 1
+    transformOrigin: Item.TopLeft
+    scale: widgetScale * ((draggable && containsPress) ? 1.05 : 1)
     Behavior on scale {
         animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
     }
 
     draggable: placementStrategy === "free" && !Config.options.background.widgetsLocked
     onReleased: {
-        root.targetX = root.x;
-        root.targetY = root.y;
-        configEntry.x = root.targetX;
-        configEntry.y = root.targetY;
+        configEntry.x = Math.max(0, Math.min(root.x, scaledScreenWidth - width * widgetScale));
+        configEntry.y = Math.max(0, Math.min(root.y, scaledScreenHeight - height * widgetScale));
+        root.targetX = Qt.binding(() => Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width * widgetScale)));
+        root.targetY = Qt.binding(() => Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height * widgetScale)));
+        root.x = Qt.binding(() => root.displayX);
+        root.y = Qt.binding(() => root.displayY);
     }
 
     property bool needsColText: false

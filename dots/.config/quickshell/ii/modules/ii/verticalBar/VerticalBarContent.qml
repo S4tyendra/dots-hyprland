@@ -150,6 +150,11 @@ Item { // Bar content region
                 Layout.fillHeight: false
             }
 
+            PeripheralBatteryIndicators {
+                vertical: true
+                Layout.alignment: Qt.AlignHCenter
+            }
+
         }
     }
 

@@ -112,6 +112,15 @@ Singleton {
             }
 
             property JsonObject appearance: JsonObject {
+                property list<string> disabledTemplates: []
+                property JsonObject system: JsonObject {
+                    property string gtkTheme: ""
+                    property string iconTheme: ""
+                    property string cursorTheme: ""
+                    property int cursorSize: 24
+                    property string qtStyle: ""
+                    property string font: ""
+                }
                 property bool extraBackgroundTint: true
                 property int fakeScreenRounding: 2 // 0: None | 1: Always | 2: When not fullscreen
                 property JsonObject fonts: JsonObject {
@@ -169,12 +178,19 @@ Singleton {
             }
 
             property JsonObject background: JsonObject {
+                property JsonObject liveWallpaper: JsonObject {
+                    property bool pauseOnBattery: true
+                    property int pauseBelowPercent: 20
+                    property int maxFps: 24
+                }
                 property string wallpaperAnimation: "random"
                 property int wallpaperAnimationDuration: 1200
                 property string wallpaperAnimationEasing: "InOutCubic"
                 property bool widgetsLocked: false
                 property JsonObject widgets: JsonObject {
                     property JsonObject clock: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: true
                         property bool showOnlyWhenLocked: false
                         property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"
@@ -215,18 +231,24 @@ Singleton {
                         }
                     }
                     property JsonObject weather: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 400
                         property real y: 100
                     }
                     property JsonObject media: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 100
                         property real y: 300
                     }
                     property JsonObject resources: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 100
@@ -234,12 +256,16 @@ Singleton {
                         property bool vertical: false
                     }
                     property JsonObject userCard: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 550
                         property real y: 300
                     }
                     property JsonObject calendar: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 550
@@ -247,6 +273,8 @@ Singleton {
                         property string sizeMode: "2x2"
                     }
                     property JsonObject customImage: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 550
@@ -256,12 +284,16 @@ Singleton {
                         property string shape: "Cookie4Sided"
                     }
                     property JsonObject images: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 850
                         property real y: 100
                     }
                     property JsonObject worldClock: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 850
@@ -272,6 +304,8 @@ Singleton {
                         ]
                     }
                     property JsonObject visualizer: JsonObject {
+                        property string monitor: ""
+                        property real scale: 1
                         property bool enable: false
                         property bool showWhenLocked: false
                         property bool hideWhenCovered: true
@@ -308,6 +342,10 @@ Singleton {
             }
 
             property JsonObject hyprland: JsonObject {
+                property JsonObject autostartApps: JsonObject {
+                    property bool enable: false
+                    property list<var> apps: []
+                }
                 property JsonObject general: JsonObject {
                     property int gapsOut: 5
                 }
@@ -404,6 +442,9 @@ Singleton {
             }
 
             property JsonObject battery: JsonObject {
+                property bool peripheralNotify: true
+                property int peripheralLow: 20
+                property int peripheralCritical: 5
                 property int low: 20
                 property int critical: 5
                 property int full: 101
