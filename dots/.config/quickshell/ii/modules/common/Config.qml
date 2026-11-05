@@ -303,6 +303,7 @@ Singleton {
                             "Australia/Sydney", "Asia/Tokyo", "Europe/London", "America/New_York"
                         ]
                     }
+                    property list<var> folders: []
                     property JsonObject visualizer: JsonObject {
                         property string monitor: ""
                         property real scale: 1

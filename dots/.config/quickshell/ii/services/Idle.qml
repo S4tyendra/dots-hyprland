@@ -36,17 +36,17 @@ Singleton {
     IdleInhibitor {
         id: idleInhibitor
         window: PanelWindow {
-            // Inhibitor requires a "visible" surface
-            // Actually not lol
-            implicitWidth: 0
-            implicitHeight: 0
+            // Needs a real Wayland surface for the inhibitor to register.
+            // A 1x1 anchored transparent window with no interactive mask is enough.
+            implicitWidth: 1
+            implicitHeight: 1
             color: "transparent"
-            // Just in case...
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
             anchors {
                 right: true
                 bottom: true
             }
-            // Make it not interactable
+            // Not interactable
             mask: Region {
                 item: null
             }

@@ -21,6 +21,8 @@ AbstractBackgroundWidget {
     readonly property bool shouldShow: (!Config.options.background.widgets.clock.showOnlyWhenLocked || GlobalStates.screenLocked)
     property bool wallpaperSafetyTriggered: false
     needsColText: clockStyle === "digital"
+    x: nested ? 0 : displayX
+    y: nested ? 0 : displayY
     visibleWhenLocked: true
 
     property var textHorizontalAlignment: {

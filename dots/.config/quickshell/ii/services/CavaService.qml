@@ -38,7 +38,10 @@ Singleton {
 
     Process {
         id: cavaProc
-        running: root.isPlaying && !root.restartPending
+        running: root.isPlaying && !root.restartPending && (
+            (Config?.options?.bar?.media?.showVisualizer ?? false)
+            || (Config?.options?.background?.widgets?.visualizer?.enable ?? false)
+        )
         onRunningChanged: {
             if (!running) {
                 root.points = [];

@@ -32,3 +32,6 @@ if status is-interactive
         alias ssh 'kitten ssh'
     end
 end
+
+# opencode
+fish_add_path /home/satya/.opencode/bin

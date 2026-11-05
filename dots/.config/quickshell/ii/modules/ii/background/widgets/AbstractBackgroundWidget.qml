@@ -9,23 +9,26 @@ import qs.modules.common.widgets.widgetCanvas
 AbstractWidget {
     id: root
 
-    required property string configEntryName
+    property string configEntryName: ""
+    property var folderEntry: null
+    property bool nested: false
     required property int screenWidth
     required property int screenHeight
     required property int scaledScreenWidth
     required property int scaledScreenHeight
     required property real wallpaperScale
     property bool visibleWhenLocked: Config.options?.lock?.showWidgets ?? false
-    property var configEntry: Config.options.background.widgets[configEntryName]
-    property string placementStrategy: configEntry.placementStrategy
+    property var configEntry: folderEntry ?? Config.options.background.widgets[configEntryName]
+    property string placementStrategy: configEntry?.placementStrategy ?? "free"
     readonly property real widgetScale: Math.max(0.5, Math.min(2, configEntry.scale ?? 1))
     property real targetX: Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width * widgetScale))
     property real targetY : Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height * widgetScale))
     property bool forceCenter: false
     readonly property real displayX: forceCenter ? (screenWidth - width * widgetScale) / 2 : targetX
     readonly property real displayY: forceCenter ? (screenHeight - height * widgetScale) / 2 : targetY
-    x: displayX
-    y: displayY
+    x: nested ? 0 : displayX
+    y: nested ? 0 : displayY
+    acceptedButtons: nested ? Qt.NoButton : (Qt.LeftButton | Qt.RightButton)
     visible: opacity > 0
     opacity: (GlobalStates.screenLocked && !visibleWhenLocked) ? 0 : 1
     Behavior on opacity {
@@ -37,8 +40,10 @@ AbstractWidget {
         animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
     }
 
-    draggable: placementStrategy === "free" && !Config.options.background.widgetsLocked
+    draggable: !nested && placementStrategy === "free" && !Config.options.background.widgetsLocked
     onReleased: {
+        if (root.nested || root.folderEntry || !root.configEntry)
+            return;
         configEntry.x = Math.max(0, Math.min(root.x, scaledScreenWidth - width * widgetScale));
         configEntry.y = Math.max(0, Math.min(root.y, scaledScreenHeight - height * widgetScale));
         root.targetX = Qt.binding(() => Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width * widgetScale)));
@@ -66,7 +71,7 @@ AbstractWidget {
         function onReadyChanged() { refreshPlacementIfNeeded() }
     }
     function refreshPlacementIfNeeded() {
-        if (!Config.ready) return;
+        if (!Config.ready || root.nested) return;
         if (root.placementStrategy === "free" && !root.needsColText) return;
         leastBusyRegionProc.wallpaperPath = root.wallpaperPath;
         leastBusyRegionProc.running = false;

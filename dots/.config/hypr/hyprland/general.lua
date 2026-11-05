@@ -80,7 +80,7 @@ hl.config({
 			special = false,
 			new_optimizations = true,
 			size = 6,
-			passes = 1,    -- 1 pass: ~55% cheaper than 2, still visually fine
+			passes = 1, -- 1 pass: ~55% cheaper than 2, still visually fine
 			brightness = 1,
 			noise = 0.05,
 			contrast = 0.89,
@@ -95,7 +95,7 @@ hl.config({
 			enabled = true,
 			range = 16,
 			offset = { 0, 2 },
-			render_power = 3,  -- was 10; higher = more shadow samples, 3 is default sweet spot
+			render_power = 3, -- was 10; higher = more shadow samples, 3 is default sweet spot
 			color = "rgba(00000020)",
 		},
 		-- Dim
@@ -268,6 +268,9 @@ hl.config({
 			scroll_factor = 0.7,
 		},
 	},
+	render = {
+		direct_scanout = false,
+	},
 
 	misc = {
 		disable_hyprland_logo = true,
@@ -284,11 +287,15 @@ hl.config({
 		session_lock_xray = true,
 		initial_workspace_tracking = false,
 		focus_on_activate = true,
+		--direct_scanout = false,
 	},
 
 	binds = {
 		scroll_event_delay = 0,
 		hide_special_on_workspace_change = true,
+		-- Qt apps (Materialgram, Telegram, etc.) request shortcut inhibit while focused.
+		-- Keep compositor binds like Super-search working anyway.
+		disable_keybind_grabbing = true,
 	},
 
 	cursor = {

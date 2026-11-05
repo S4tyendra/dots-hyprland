@@ -106,6 +106,18 @@ MouseArea {
         dragProxy.y = root.y
     }
 
+    onReleased: {
+        var canvas = findCanvas(root.parent)
+        if (canvas)
+            canvas.setDragging(false)
+    }
+
+    Component.onDestruction: {
+        var canvas = findCanvas(root.parent)
+        if (canvas)
+            canvas.setDragging(false)
+    }
+
     Behavior on x {
         id: xBehavior
         enabled: !root.dragging

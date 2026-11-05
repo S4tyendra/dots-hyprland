@@ -70,6 +70,21 @@ Singleton {
         updateWorkspaces();
     }
 
+    // Coalesce hyprctl dumps. Raw events can fire many times a second
+    // (windowtitle from browsers, move/resize, duplicated v1/v2 events).
+    // Each dump re-parses JSON and invalidates bindings across the shell.
+    Timer {
+        id: updateAllDebounce
+        interval: 80
+        repeat: false
+        onTriggered: root.updateAll()
+    }
+
+    function requestUpdateAll() {
+        if (!updateAllDebounce.running)
+            updateAllDebounce.start();
+    }
+
     function biggestWindowForWorkspace(workspaceId) {
         const windowsInThisWorkspace = HyprlandData.windowList.filter(w => w.workspace.id == workspaceId);
         return windowsInThisWorkspace.reduce((maxWin, win) => {
@@ -87,9 +102,11 @@ Singleton {
         target: Hyprland
 
         function onRawEvent(event) {
-            // console.log("Hyprland raw event:", event.name);
-            if (["openlayer", "closelayer", "screencast"].includes(event.name)) return;
-            updateAll()
+            // Ignore noise that does not change clients/workspaces/monitors.
+            if (["openlayer", "closelayer", "screencast", "activelayout",
+                 "submap", "configreloaded", "ack"].includes(event.name))
+                return;
+            root.requestUpdateAll();
         }
     }
 

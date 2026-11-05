@@ -77,6 +77,7 @@ Scope {
             exclusiveZone: 0
             WlrLayershell.namespace: "quickshell:desktopMenu"
             WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
             anchors {
                 top: true
@@ -89,10 +90,29 @@ Scope {
             property real submenuAnchorY: 0
             property real submenuWidth: 284
 
+            function submenuHasFocus(item) {
+                if (!item)
+                    return false;
+                if (item.activeFocus)
+                    return true;
+                const kids = item.children;
+                if (!kids)
+                    return false;
+                for (let i = 0; i < kids.length; i++) {
+                    if (menuWindow.submenuHasFocus(kids[i]))
+                        return true;
+                }
+                return false;
+            }
+
             Timer {
                 id: submenuCloseTimer
                 interval: 250
-                onTriggered: menuWindow.openSubmenuComponent = null
+                onTriggered: {
+                    if (submenuHover.hovered || menuWindow.submenuHasFocus(submenuLoader.item))
+                        return;
+                    menuWindow.openSubmenuComponent = null;
+                }
             }
 
             MouseArea {
@@ -246,16 +266,24 @@ Scope {
                 id: submenuLoader
                 active: menuWindow.openSubmenuComponent !== null
                 width: menuWindow.submenuWidth
+                height: {
+                    const contentH = item?.implicitHeight ?? 0;
+                    return Math.min(contentH, Math.max(120, menuWindow.height - 16));
+                }
+                clip: true
                 sourceComponent: menuWindow.openSubmenuComponent
 
                 x: (menuCard.x + menuCard.width + 8 + menuWindow.submenuWidth > menuWindow.width)
                     ? menuCard.x - menuWindow.submenuWidth - 8
                     : menuCard.x + menuCard.width + 8
 
-                y: Math.min(
-                    Math.max(menuWindow.submenuAnchorY, 8),
-                    menuWindow.height - (item?.implicitHeight ?? 0) - 8
-                )
+                y: {
+                    const h = height;
+                    return Math.min(
+                        Math.max(menuWindow.submenuAnchorY, 8),
+                        Math.max(8, menuWindow.height - h - 8)
+                    );
+                }
 
                 scale: active ? 1.0 : 0.9
                 opacity: active ? 1.0 : 0.0
@@ -269,6 +297,7 @@ Scope {
                 }
 
                 HoverHandler {
+                    id: submenuHover
                     onHoveredChanged: {
                         if (hovered) submenuCloseTimer.stop()
                         else submenuCloseTimer.restart()

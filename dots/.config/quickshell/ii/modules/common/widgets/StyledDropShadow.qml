@@ -1,13 +1,17 @@
 import QtQuick
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import qs.modules.common
 
-DropShadow {
+// GPU shadow. Qt5Compat DropShadow ran a CPU Gaussian blur
+// whenever the source layer was dirty (clock, cookies, etc.).
+MultiEffect {
     required property var target
     source: target
     anchors.fill: source
-    radius: 8
-    samples: radius * 2 + 1
-    color: Appearance.colors.colShadow
-    transparentBorder: true
+    shadowEnabled: true
+    shadowBlur: 0.6
+    shadowHorizontalOffset: 0
+    shadowVerticalOffset: 2
+    shadowColor: Appearance.colors.colShadow
+    autoPaddingEnabled: true
 }

@@ -25,6 +25,7 @@ import qs.modules.ii.background.widgets.usercard
 import qs.modules.ii.background.widgets.calendar
 import qs.modules.ii.background.widgets.images
 import qs.modules.ii.background.widgets.worldclock
+import qs.modules.ii.background.widgets.folder
 
 Scope {
     id: root
@@ -241,6 +242,8 @@ Scope {
                     cache: true
                     smooth: true
                     asynchronous: true
+                    // Decode at panel size, not the raw 4K+/5K file pixels.
+                    sourceSize: Qt.size(bgRoot.screen.width, bgRoot.screen.height)
                     // Only enable layer (GPU texture) while a transition is running;
                     // keeping it on permanently wastes a full-screen VRAM allocation.
                     layer.enabled: transitionAnim.running
@@ -306,6 +309,13 @@ Scope {
 
                     source: bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
                     fillMode: Image.PreserveAspectCrop
+                    // Override StyledImage's width*dpr sourceSize. Wallpaper
+                    // implicit size is the file (5504x3072 here); decoding that
+                    // twice (two monitors) is hundreds of MB for no extra pixels.
+                    sourceSize: Qt.size(
+                        Math.ceil(Math.min(width, bgRoot.screen.width * 1.25)),
+                        Math.ceil(Math.min(height, bgRoot.screen.height * 1.25))
+                    )
                     Behavior on x {
                         NumberAnimation {
                             duration: 600
@@ -405,8 +415,38 @@ Scope {
                         }
                     }
 
+                    readonly property var widgetsInFolders: {
+                        const set = {};
+                        const folders = Config.options.background.widgets.folders ?? [];
+                        for (let i = 0; i < folders.length; i++) {
+                            const f = folders[i];
+                            if (!f || f.enable === false)
+                                continue;
+                            if (f.cover)
+                                set[f.cover] = true;
+                            const ch = f.children ?? [];
+                            for (let j = 0; j < ch.length; j++)
+                                set[ch[j]] = true;
+                        }
+                        return set;
+                    }
+
+                    Repeater {
+                        model: Config.options.background.widgets.folders ?? []
+                        delegate: FolderWidget {
+                            required property var modelData
+                            folder: modelData
+                            visible: modelData.enable !== false
+                            screenWidth: bgRoot.screen.width
+                            screenHeight: bgRoot.screen.height
+                            scaledScreenWidth: bgRoot.screen.width
+                            scaledScreenHeight: bgRoot.screen.height
+                            wallpaperScale: 1
+                        }
+                    }
+
                     FadeLoader {
-                        shown: Config.options.background.widgets.weather.enable && DesktopWidgets.showOn("weather", bgRoot.monitor?.name ?? "")
+                        shown: Config.options.background.widgets.weather.enable && DesktopWidgets.showOn("weather", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.weather
                         sourceComponent: WeatherWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -417,7 +457,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.clock.enable && DesktopWidgets.showOn("clock", bgRoot.monitor?.name ?? "")
+                        shown: Config.options.background.widgets.clock.enable && DesktopWidgets.showOn("clock", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.clock
                         sourceComponent: ClockWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -429,7 +469,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.media.enable && DesktopWidgets.showOn("media", bgRoot.monitor?.name ?? "")
+                        shown: (Config.options.background.widgets.media?.enable ?? false) && DesktopWidgets.showOn("media", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.media
                         sourceComponent: MediaWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -440,7 +480,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.resources.enable && DesktopWidgets.showOn("resources", bgRoot.monitor?.name ?? "")
+                        shown: (Config.options.background.widgets.resources?.enable ?? false) && DesktopWidgets.showOn("resources", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.resources
                         sourceComponent: ResourcesWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -451,7 +491,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.userCard.enable && DesktopWidgets.showOn("userCard", bgRoot.monitor?.name ?? "")
+                        shown: (Config.options.background.widgets.userCard?.enable ?? false) && DesktopWidgets.showOn("userCard", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.userCard
                         sourceComponent: UserCardWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -462,7 +502,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.calendar.enable && DesktopWidgets.showOn("calendar", bgRoot.monitor?.name ?? "")
+                        shown: (Config.options.background.widgets.calendar?.enable ?? false) && DesktopWidgets.showOn("calendar", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.calendar
                         sourceComponent: CalendarWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -473,7 +513,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.customImage.enable && DesktopWidgets.showOn("customImage", bgRoot.monitor?.name ?? "")
+                        shown: (Config.options.background.widgets.customImage?.enable ?? false) && DesktopWidgets.showOn("customImage", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.customImage
                         sourceComponent: CustomImage {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -484,7 +524,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.images.enable && DesktopWidgets.showOn("images", bgRoot.monitor?.name ?? "")
+                        shown: (Config.options.background.widgets.images?.enable ?? false) && DesktopWidgets.showOn("images", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.images
                         sourceComponent: ImageConverterWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height
@@ -495,7 +535,7 @@ Scope {
                     }
 
                     FadeLoader {
-                        shown: Config.options.background.widgets.worldClock.enable && DesktopWidgets.showOn("worldClock", bgRoot.monitor?.name ?? "")
+                        shown: (Config.options.background.widgets.worldClock?.enable ?? false) && DesktopWidgets.showOn("worldClock", bgRoot.monitor?.name ?? "") && !widgetCanvas.widgetsInFolders.worldClock
                         sourceComponent: WorldClockWidget {
                             screenWidth: bgRoot.screen.width
                             screenHeight: bgRoot.screen.height

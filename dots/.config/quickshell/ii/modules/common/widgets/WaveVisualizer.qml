@@ -2,9 +2,11 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
-import QtQuick.Effects
+import QtQuick.Layouts
 
-Canvas { // Visualizer
+// GPU-composited bars. The old Canvas 2D path ran JS + CPU raster +
+// MultiEffect blur at cava's framerate on the GUI thread (~60fps).
+Item {
     id: root
     property list<var> points
     property list<var> smoothPoints
@@ -14,62 +16,37 @@ Canvas { // Visualizer
     property bool live: true
     property color color: Appearance.m3colors.m3primary
 
-    onPointsChanged: () => {
-        root.requestPaint()
-    }
+    readonly property int barCount: Math.max(8, Math.min(points.length || 0, 48))
 
-    onPaint: {
-        var ctx = getContext("2d");
-        ctx.clearRect(0, 0, width, height);
+    Row {
+        anchors.fill: parent
+        spacing: 2
 
-        var points = root.points;
-        var maxVal = root.maxVisualizerValue || 1;
-        var h = height;
-        var w = width;
-        var n = points.length;
-        if (n < 2) return;
-
-        // Smoothing: simple moving average (optional)
-        var smoothWindow = root.smoothing; // adjust for more/less smoothing
-        root.smoothPoints = [];
-        for (var i = 0; i < n; ++i) {
-            var sum = 0, count = 0;
-            for (var j = -smoothWindow; j <= smoothWindow; ++j) {
-                var idx = Math.max(0, Math.min(n - 1, i + j));
-                sum += points[idx];
-                count++;
+        Repeater {
+            model: root.live ? root.barCount : 0
+            delegate: Rectangle {
+                required property int index
+                width: Math.max(1, (root.width - (root.barCount - 1) * 2) / root.barCount)
+                anchors.bottom: parent.bottom
+                height: {
+                    if (!root.live || !root.points || root.points.length === 0)
+                        return 2;
+                    const n = root.points.length;
+                    const src = Math.min(n - 1, Math.floor(index * n / root.barCount));
+                    let sum = 0, count = 0;
+                    const w = root.smoothing;
+                    for (let j = -w; j <= w; ++j) {
+                        const idx = Math.max(0, Math.min(n - 1, src + j));
+                        sum += root.points[idx];
+                        count++;
+                    }
+                    const norm = Math.min(1.0, Math.max(0.0, (sum / count) / (root.maxVisualizerValue || 1)));
+                    const scaled = Math.pow(norm, root.nonLinearCurve);
+                    return Math.max(2, scaled * root.height);
+                }
+                radius: width / 2
+                color: Qt.rgba(root.color.r, root.color.g, root.color.b, 0.45)
             }
-            root.smoothPoints.push(sum / count);
         }
-        if (!root.live) root.smoothPoints.fill(0); // If not playing, show no points
-
-        ctx.beginPath();
-        ctx.moveTo(0, h);
-        for (var i = 0; i < n; ++i) {
-            var x = i * w / (n - 1);
-            var norm = Math.min(1.0, Math.max(0.0, root.smoothPoints[i] / maxVal));
-            var scaled = Math.pow(norm, root.nonLinearCurve);
-            var y = h - scaled * h;
-            ctx.lineTo(x, y);
-        }
-        ctx.lineTo(w, h);
-        ctx.closePath();
-
-        ctx.fillStyle = Qt.rgba(
-            root.color.r,
-            root.color.g,
-            root.color.b,
-            0.15
-        );
-        ctx.fill();
-    }
-
-    layer.enabled: true
-    layer.effect: MultiEffect { // Blur a bit to obscure away the points
-        source: root
-        saturation: 0.2
-        blurEnabled: true
-        blurMax: 7
-        blur: 1
     }
 }
